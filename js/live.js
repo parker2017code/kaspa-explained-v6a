@@ -83,7 +83,7 @@
   function setSource() {
     var s = $('liveSource'); if (!s) return;
     if (L.sim) {
-      s.textContent = 'Simulation: the live network could not be reached from your browser.';
+      s.textContent = 'Simulation: the live network could not be reached from your browser.'; var co = $('coldOpen'); if (co) co.textContent = 'Simulated blocks: the live network could not be reached.';
       // Nothing measured offline: say so instead of leaving "…" forever.
       ['hudRate', 'hudPar', 'tK', 'tB'].forEach(function (id) { var e = $(id); if (e) e.textContent = '–'; });
       var sc = $('lfScore'); if (sc && sc.textContent === '…') sc.textContent = 'not reachable';
