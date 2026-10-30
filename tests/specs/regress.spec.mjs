@@ -92,6 +92,7 @@ for (const width of [320, 390]) {
     const page = await ctx.newPage(); const errs = [];
     page.on('pageerror', e => errs.push(e.message)); page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
     await page.goto('./');
+    await page.waitForFunction(() => document.documentElement.dataset.ready, null, { timeout: 20_000 });
     const n = await page.locator('main button:visible, main summary:visible').count();
     expect(n).toBeGreaterThan(20);
     let tapped = 0;

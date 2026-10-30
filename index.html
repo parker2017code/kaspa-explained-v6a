@@ -422,15 +422,16 @@
 
 </main>
 <footer>Independent explainer, not official, not investment advice. Live data: api.kaspa.org, mempool.space and CoinGecko, read-only. Checked 30 Oct 2026. <a href="CREDITS.md">Credits</a>.</footer>
-<script src="vendor/d3.min.js" defer></script>
-<script src="vendor/plot.umd.min.js" defer></script>
-<script src="vendor/interact.min.js" defer></script>
 <script src="vendor/number-flow.min.js" defer></script>
 <script src="js/ui.js" defer></script>
-<script src="js/collision-sim.js" defer></script>
 <script src="js/live.js" defer></script>
-<script src="js/site.js" defer></script>
-<script src="js/market.js" defer></script>
 <script src="js/vt.js" defer></script>
+<script>
+(function () {
+  var later = ['vendor/d3.min.js', 'vendor/plot.umd.min.js', 'vendor/interact.min.js', 'js/collision-sim.js', 'js/site.js', 'js/market.js'];
+  function go() { later.forEach(function (src) { var e = document.createElement('script'); e.src = src; e.async = false; document.body.appendChild(e); }); }
+  if (document.readyState === 'complete') setTimeout(go, 0); else addEventListener('load', function () { setTimeout(go, 0); }, { once: true });
+})();
+</script>
 </body>
 </html>

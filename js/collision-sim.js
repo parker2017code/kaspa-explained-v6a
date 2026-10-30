@@ -366,8 +366,11 @@
           if (rafId === null) rafId = requestAnimationFrame(render);
         }
 
+        /* Only run while on screen: off-screen ticks cost a phone seconds of main thread at load. */
+        let onScreen = false;
         function scheduleNext() {
-          if (reducedMotion) return;
+          if (reducedMotion || !onScreen) return;
+          if (autoTimer) clearTimeout(autoTimer);
           const waitMs = nextWaitMs();
           autoTimer = setTimeout(() => { generateEvent(); requestRender(); scheduleNext(); }, waitMs);
         }
@@ -445,6 +448,13 @@
         delayInput.addEventListener('input', function () { if (paused && autoTimer) { clearTimeout(autoTimer); autoTimer = null; } });
         if (reducedMotion) playBtn.hidden = true;
         paintStep();
+        if (typeof IntersectionObserver === 'function' && root) {
+          new IntersectionObserver(function (e) {
+            onScreen = e[e.length - 1].isIntersecting;
+            if (onScreen) { if (!paused) scheduleNext(); requestRender(); }
+            else if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+          }, { rootMargin: '200px 0px' }).observe(root);
+        } else { onScreen = true; if (!paused) scheduleNext(); }
       }
 
 document.querySelectorAll('[data-collision-sim]').forEach(function (el) {

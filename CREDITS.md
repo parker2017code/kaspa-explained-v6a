@@ -58,3 +58,10 @@ Licence texts sit next to the files: `vendor/licenses/` and `fonts/*.OFL.txt`.
 Live numbers come from the public Kaspa REST API (api.kaspa.org), mempool.space for Bitcoin's latest block, and CoinGecko for prices and market size. Every figure shows its source and the time it was read; when a source is unreachable the page shows a dated recorded value and says so. When the Kaspa API is unreachable the page says so and shows a labelled simulation; the Bitcoin figures simply stay hidden.
 
 The tests in `tests/` (Playwright, axe-core) are not served to readers; they check the page at 320, 390, 768, 1280, 1440, 1920 and 2560 px wide, and every deep-dive page at 390 and 1440.
+
+## Load-speed patterns (Oct 30, 2026 pass)
+- Defer non-critical JavaScript until after the `load` event (web.dev, "Efficiently load third-party JavaScript" / "Reduce JavaScript execution time"): d3, Observable Plot, interact.js, the collision sim, site.js and market.js are injected in order (`async=false`) after load, so they don't compete with the first paint.
+- IntersectionObserver gating (MDN, web.dev "Lazy-load offscreen work"): the collision simulation only runs timers while it is on screen.
+- Ambient canvas budget: the hero background is capped at 30 fps and devicePixelRatio 1.5 on small/touch screens (common canvas guidance, MDN "Optimizing canvas").
+- Reserved heights for content that fills in later (web.dev "Optimize Cumulative Layout Shift"): the two-network race readouts and piles have min-heights.
+- Readiness flag: `html[data-ready]` is set when the late scripts finish; the tests wait for it before interacting.

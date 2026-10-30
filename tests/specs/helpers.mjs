@@ -1,6 +1,12 @@
 import { test as base, expect } from '@playwright/test';
 // Fails any test that logs a console error, a page error, or a failed same-origin request.
 export const test = base.extend({
+  // The main page loads its section scripts after the load event; wait for them like a reader would.
+  page: async ({ page }, use) => {
+    const goto = page.goto.bind(page);
+    page.goto = async (...a) => { const r = await goto(...a); await page.waitForFunction(() => document.documentElement.dataset.ready || !window.KLive, null, { timeout: 20_000 }); return r; };
+    await use(page);
+  },
   errors: async ({ page }, use) => {
     const errors = [];
     page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });

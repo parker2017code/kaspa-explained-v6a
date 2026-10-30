@@ -125,3 +125,5 @@
   var rt; addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(drawSize, 150); });
   new MutationObserver(drawSize).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 })();
+/* Last of the late scripts: mark the page fully interactive (tests wait on this). */
+document.documentElement.dataset.ready = '1';

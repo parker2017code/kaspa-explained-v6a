@@ -127,8 +127,8 @@
     o.connect(g); g.connect(ac.destination); o.start(n); o.stop(n + 0.07);
   }
 
-  function fit(c) {
-    var dpr = window.devicePixelRatio || 1, sz = KUI.size(c), w = sz.w, h = sz.h;
+  function fit(c, cap) {
+    var dpr = Math.min(window.devicePixelRatio || 1, cap || 3), sz = KUI.size(c), w = sz.w, h = sz.h;
     if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
     var g = sz.g; g.setTransform(dpr, 0, 0, dpr, 0, 0); return { g: g, w: w, h: h };
   }
@@ -242,7 +242,11 @@
     el.innerHTML = 'At this scale, Bitcoin’s latest block is <b class="num">' + fmt(m, 1) + ' metres</b> off the left of your screen.';
     $('btcScaleNote').textContent = 'Bitcoin block #' + fmt(btc.h) + ', mined ' + (age < 1 ? 'moments' : mm + ' min ' + ss + ' s') + ' ago (mempool.space). Its average gap, ten minutes, would be ' + fmt(600 * pps * 0.0254 / 96, 1) + ' metres here.';
   }
+  /* Phones draw the background at 30 fps and at most 1.5x pixel density: it is ambient motion behind text,
+     and full-rate retina redraws cost more main thread than the rest of the page together. */
+  var lowPower = matchMedia('(max-width: 760px), (pointer: coarse)').matches, minGap = lowPower ? 32 : 0;
   function frame(ts) {
+    if (minGap && lastF && ts - lastF < minGap) { if (!reduced && heroOn) requestAnimationFrame(frame); return; }
     var dt = lastF ? Math.min(100, ts - lastF) : 16; lastF = ts;
     if (L.newest) {
       var target = L.newest - 1200;
@@ -251,7 +255,7 @@
       renderT += dt * (1 + Math.max(-0.6, Math.min(1.5, lag / 4000)));
       if (lag > 30000) renderT = target - 4000;
     }
-    var f = fit(hero), wide = f.w > 700, g0 = geo(f);
+    var f = fit(hero, lowPower ? 1.5 : 2), wide = f.w > 700, g0 = geo(f);
     g0.dt = dt; drawDag(f.g, f.w, f.h, g0);
     btcScale(g0.pps);
     hud(ts || performance.now());
