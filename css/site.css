@@ -575,3 +575,5 @@ button.link{background:none;border:0;padding:0 2px;font:inherit;color:var(--gree
 .duel .pile,.duel .slots{min-height:40px}
 @media (max-width:1100px){.duel .side-out{min-height:5lh}}
 @media (max-width:360px){.duel .side-out{min-height:6lh}}
+
+.num.stale{opacity:.55}

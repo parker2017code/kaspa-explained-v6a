@@ -9,6 +9,13 @@
   var tstr = function (t) { return timeFmt.format(new Date(t)); };
   var L = window.KLive = { times: [], blocks: new Map(), ok: false, failed: false, newest: 0, daa: null, subs: [], sim: false };
   function j(u) { return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
+  /* Network starts wait until the first frame has painted and the page is idle, so API latency never sits in front of first paint. */
+  var painted = false, paintQ = [];
+  function whenPainted(fn) { if (painted) fn(); else paintQ.push(fn); }
+  function flushPaint() { if (painted) return; painted = true; paintQ.splice(0).forEach(function (f) { try { f(); } catch (e) {} }); }
+  function armPaint() { requestAnimationFrame(function () { setTimeout(function () { if (window.requestIdleCallback) requestIdleCallback(flushPaint, { timeout: 700 }); else setTimeout(flushPaint, 200); }, 0); }); }
+  if (document.readyState === 'complete') armPaint(); else addEventListener('load', armPaint, { once: true });
+  L.whenPainted = whenPainted;
   function markChain() { if (!L.chain) return; var s = L.chain().set; L.blocks.forEach(function (b) { b.chain = s.has(b.h); }); }
   function emit() { markChain(); L.subs.forEach(function (f) { try { f(); } catch (e) {} }); }
 
@@ -110,8 +117,8 @@
     }, 100);
   }
   L.retry = function () { if (simTimer) { clearInterval(simTimer); simTimer = null; } L.sim = false; L.failed = false; L.blocks.clear(); L.times.length = 0; L.first = 0; L.newest = 0; busy = false; paused = false; streamedMs = 0; cycle(); };
-  setInterval(cycle, 2000); cycle();
-  document.addEventListener('visibilitychange', function () { lastTick = performance.now(); if (visible()) cycle(); });
+  whenPainted(function () { lastTick = performance.now(); setInterval(cycle, 2000); cycle(); });
+  document.addEventListener('visibilitychange', function () { lastTick = performance.now(); if (visible() && painted) cycle(); });
 
   /* Sound: off by default, one soft tick per block as it appears. */
   var ac = null, soundOn = false, lastBeep = 0;
@@ -210,10 +217,15 @@
   function hud(ts) {
     if (ts - hudAt < 400 || !L.newest) return; hudAt = ts;
     var st = L.stats();
+    if (!L.sim) ['hudRate', 'hudPar'].forEach(function (id) { var e = $(id); if (e.classList.contains('stale')) { e.classList.remove('stale'); e.removeAttribute('title'); } });
     if (st.rate !== null && !L.sim) KUI.num($('hudRate'), +st.rate.toFixed(1), { d: 1 }, fmt(st.rate, 1));
     if (st.par !== null && !L.sim) KUI.num($('hudPar'), +st.par.toFixed(1), { d: 1 }, fmt(st.par, 1));
     KUI.num($('hudSeen'), st.seen, null, fmt(st.seen));
+    if (!L.sim && st.rate !== null && st.par !== null && ts - savedAt > 10000) { savedAt = ts; try { localStorage.setItem('kx-hud', JSON.stringify({ r: fmt(st.rate, 1), p: fmt(st.par, 1), t: Date.now() })); } catch (e) {} }
   }
+  /* Until live data arrives, show the last values this browser saw (under a day old), marked as such by the source line. */
+  var savedAt = 0;
+  try { var last = JSON.parse(localStorage.getItem('kx-hud') || 'null'); if (last && Date.now() - last.t < 864e5) { [['hudRate', last.r], ['hudPar', last.p]].forEach(function (x) { var e = $(x[0]); if (e.textContent === '…') { e.textContent = x[1]; e.classList.add('stale'); e.title = 'Last value this browser saw; waiting for live data'; } }); } } catch (e) {}
   var heroIn = document.querySelector('.hero-in'), hudEl = $('hud'), cold = $('coldOpen');
   document.documentElement.classList.add('js');
   if (!reduced) { heroIn.classList.add('pre'); }
@@ -236,7 +248,7 @@
   /* Bitcoin at the same scale: how far off-screen its latest block would sit. */
   var btc = null, btcAt = 0;
   function btcPoll() { j('https://mempool.space/api/v1/blocks').then(function (r) { btc = { h: r[0].height, t: r[0].timestamp * 1000 }; L.btc = btc; }).catch(function () {}); }
-  btcPoll(); setInterval(btcPoll, 30000);
+  whenPainted(function () { btcPoll(); setInterval(btcPoll, 30000); });
   function btcScale(pps) {
     var el = $('btcScale'); if (!el || !btc || !L.newest) return;
     var now = performance.now(); if (now - btcAt < 1000) return; btcAt = now;
@@ -514,7 +526,7 @@
       j('https://mempool.space/api/blocks/tip/height').then(function (h) { h = Number(h); if (b0 === null) b0 = h; b = h; draw(); }).catch(function () {});
       j('https://mempool.space/api/v1/blocks').then(function (r) { bt = { h: r[0].height, t: r[0].timestamp * 1000 }; draw(); }).catch(function () {});
     }
-    poll(); setInterval(poll, 15000);
+    whenPainted(function () { poll(); setInterval(poll, 15000); });
     function draw() {
       if (L.ok && L.daa && k0 !== null && L.daa > k) k = L.daa;
       var el = (Date.now() - t0) / 1000, ok = k0 !== null && b0 !== null && k > k0;
