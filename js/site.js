@@ -141,7 +141,7 @@
   function gReset() {
     G.blocks = [mk([])]; G.secret = []; G.hidingSince = 0; G.released = null;
     /* start with a full window of history, the way streaming charts pre-fill their buffer */
-    var cw = $('ghostCanvas').clientWidth || 600, rounds = Math.max(3, Math.floor(cw / 62) - 2);
+    var cw = $('ghostCanvas').clientWidth || 600, rounds = Math.max(6, Math.floor(cw / 62)) - 1;
     for (var i = 0; i < rounds; i++) honestRound();
     $('gOut').textContent = 'Honest miners are working. Each block points at every block its miner had seen.';
     $('gHide').disabled = false; $('gRelease').disabled = true; drawGhost();
@@ -270,8 +270,10 @@
     g.clearRect(0, 0, w, h);
     var font = css('--font'), muted = css('--muted'), green = css('--green'), orange = css('--orange');
     g.font = '13px ' + font; g.fillStyle = muted; g.textBaseline = 'middle'; g.textAlign = 'left';
-    var lab = Math.min(120, w * 0.28), colW = (w - lab) / 3;
-    g.fillText('Separate coins', 0, 55); g.fillText('One balance', 0, 125);
+    /* narrow screens: row names sit above their row so the five coins never run into them */
+    var stack = w < 520, lab = stack ? 12 : Math.min(120, w * 0.28), colW = (w - lab - (stack ? 12 : 0)) / 3, gap = Math.min(24, (colW - 4) / 5), rad = Math.min(10, gap / 2 - 0.5);
+    if (stack) { g.font = '12px ' + font; g.fillText('Separate coins', 0, 33); g.fillText('One balance', 0, 103); }
+    else { g.fillText('Separate coins', 0, 55); g.fillText('One balance', 0, 125); }
     g.textAlign = 'center'; g.font = '12px ' + font;
     ['on the way', 'waiting', 'done'].forEach(function (s, k) { g.fillText(s, lab + colW * (k + 0.5), 14); });
     order = order || [0, 1, 2, 3, 4];
@@ -280,11 +282,11 @@
     order.forEach(function (p, k) { arrive[p] = 0.3 + 0.4 * k; });
     for (var p = 0; p < 5; p++) { doneAt[p] = Math.max(arrive[p], prev); prev = doneAt[p] + 0.05; }
     function dot(x, y, col, n) {
-      g.fillStyle = col; g.beginPath(); g.arc(x, y, 10, 0, 7); g.fill();
+      g.fillStyle = col; g.beginPath(); g.arc(x, y, rad, 0, 7); g.fill();
       g.fillStyle = css('--bg'); g.font = '600 11px ' + font; g.fillText(String(n + 1), x, y + 0.5);
     }
     for (var i = 0; i < 5; i++) {
-      var dx = (i - 2) * 24;
+      var dx = (i - 2) * gap;
       /* coins: each is done as soon as it lands */
       var cc = t < arrive[i] ? 0 : 2;
       dot(lab + colW * (cc + 0.5) + dx, 55, cc === 2 ? green : muted, i);

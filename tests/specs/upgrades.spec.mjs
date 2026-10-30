@@ -2,7 +2,7 @@
 import { test, expect, setRange, offline } from './helpers.mjs';
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await page.locator('#liveSource').filter({ hasText: /Live|Simulation/ }).waitFor({ timeout: 20_000 });
 });
 
@@ -92,7 +92,7 @@ test('lookup: "Use a recent one" fills a real id or says why not', async ({ page
 
 test.describe('offline', () => {
   test('txRecent is honest when the network is unreachable', async ({ page }) => {
-    await offline(page); await page.goto('/');
+    await offline(page); await page.goto('./');
     await page.locator('#lookup').scrollIntoViewIfNeeded();
     await page.click('#txRecent');
     await expect(page.locator('#txOut')).toContainText('Nothing real to hand yet');
