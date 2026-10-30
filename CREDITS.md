@@ -32,3 +32,5 @@ Licence texts sit next to the files: `vendor/licenses/` and `fonts/*.OFL.txt`.
 ## Data
 
 Live numbers come from the public Kaspa REST API (api.kaspa.org) and, for Bitcoin's latest block, mempool.space. When the Kaspa API is unreachable the page says so and shows a labelled simulation; the Bitcoin figures simply stay hidden.
+
+The tests in `tests/` (Playwright, axe-core) are not served to readers; they check the page at 1440, 390 and 320 px wide.
