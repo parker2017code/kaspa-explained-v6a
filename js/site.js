@@ -22,6 +22,34 @@
   var fmtShort = function (n) { var a = Math.abs(n); return a >= 1e9 ? +(n / 1e9).toPrecision(3) + 'B' : a >= 1e6 ? +(n / 1e6).toPrecision(3) + 'M' : a >= 1e3 ? +(n / 1e3).toPrecision(3) + 'k' : String(Math.round(n)); };
   var fmt = KUI.fmt;
 
+  /* Charts draw when their chapter first comes near the screen, not all at once on load
+     (the chapters below the fold are not even laid out yet; see content-visibility in site.css).
+     After that, theme, resize and <details> changes redraw only the charts that have been drawn. */
+  function kxSeen(s) {
+    if (s._kxSeen) return; s._kxSeen = true;
+    var q = s._kxQ || []; s._kxQ = null; q.forEach(function (f) { f(); });
+  }
+  var lazyIO = window.IntersectionObserver ? new IntersectionObserver(function (es) {
+    es.forEach(function (e) { if (e.isIntersecting) { lazyIO.unobserve(e.target); kxSeen(e.target); } });
+  }, { rootMargin: '50% 0px' }) : null;
+  var backIO = window.IntersectionObserver ? new IntersectionObserver(function (es) {
+    es.forEach(function (e) { if (e.isIntersecting) { backIO.unobserve(e.target); kxSeen(e.target); } });
+  }) : null;
+  /* A chapter with content-visibility:auto says when the browser starts rendering it; draw then, when it has real sizes. */
+  var cvEvents = 'oncontentvisibilityautostatechange' in document.documentElement;
+  function when(id, fn) {
+    var el = $(id), s = el && (el.closest('section') || el);
+    if (!s || !lazyIO || s._kxSeen) return fn();
+    if (!s._kxQ) {
+      s._kxQ = [];
+      if (cvEvents && getComputedStyle(s).contentVisibility === 'auto') {
+        s.addEventListener('contentvisibilityautostatechange', function h(e) { if (!e.skipped) { s.removeEventListener('contentvisibilityautostatechange', h); requestAnimationFrame(function () { backIO.unobserve(s); kxSeen(s); }); } });
+        backIO.observe(s); /* backstop if the event never comes: on screen means rendered */
+      } else lazyIO.observe(s);
+    }
+    if (s._kxQ.indexOf(fn) < 0) s._kxQ.push(fn);
+  }
+
   /* Theme and nerd mode */
   var themeBtn = $('theme');
   /* Paper is the default; "dark" is the night palette. */
@@ -220,7 +248,7 @@
     drawGhost();
   });
   $('gReset').addEventListener('click', function () { hiding = false; gReset(); startAuto(); });
-  var gIO = new IntersectionObserver(function (e) { if (e[0].isIntersecting) startAuto(); else stopAuto(); });
+  var gIO = new IntersectionObserver(function (e) { if (e[0].isIntersecting) when('ghostCanvas', startAuto); else stopAuto(); });
   gIO.observe($('ghost'));
   function drawGhost() {
     var c = $('ghostCanvas'), f = fit(c), g = f.g, w = f.w, h = f.h;
@@ -288,7 +316,7 @@
     $('gOrder').innerHTML = ord.slice(-28).map(function (b) { return v.blue.has(b) ? String(b.id) : '<span style="color:var(--red)">' + b.id + ' red</span>'; }).join(' → ');
   }
   var a0 = +params.get('atk'); if (a0 >= 5 && a0 <= 45) $('qAtk').value = a0; $('qAtkVal').textContent = Math.round(q() * 100) + '%';
-  gReset();
+  when('ghostCanvas', gReset);
 
   /* Chapter 3: coins vs one balance */
   var coinsBtn = $('coinsGo');
@@ -322,7 +350,6 @@
     }
   }
   var coinsState = { t: 0, order: null };
-  drawCoins(0, null);
   coinsBtn.addEventListener('click', function () {
     var arr = [0, 1, 2, 3, 4].sort(function () { return Math.random() - 0.5; });
     var t0 = performance.now();
@@ -478,6 +505,7 @@
   function buildTrack() {
     var fig = $('track'); if (!window.d3 || !fig) return;
     var w = fig.clientWidth, narrow = w < 560, h = narrow ? 132 : 120;
+    if (w < 120) return; /* not laid out (closed or not yet rendered); drawn when it is */
     var svg = d3.select('#trackSvg').attr('viewBox', '0 0 ' + w + ' ' + h).attr('width', w).attr('height', h);
     svg.selectAll('*').remove();
     var x = d3.scaleLog().domain([0.1, 7200]).range([14, w - 14]), axisY = h - 26;
@@ -606,7 +634,8 @@
     covers(acts[2], [['files/the-instrument.pdf', 'img/cover-the-instrument.jpg', 'The Instrument', '279 pages']]);
   })();
 
-  function redrawAll() { drawGhost(); drawCoins(coinsState.t, coinsState.order); drawFair(); drawEmit(); drawMiners(); buildTrack(); }
+  var drawCoinsNow = function () { drawCoins(coinsState.t, coinsState.order); };
+  function redrawAll() { when('ghostCanvas', drawGhost); when('coinsCanvas', drawCoinsNow); when('fairPlot', drawFair); when('emitPlot', drawEmit); when('tpsIn', drawMiners); when('track', buildTrack); }
   document.querySelectorAll('details').forEach(function (d) { d.addEventListener('toggle', function () { if (d.open) redrawAll(); }); });
   redrawAll();
   var rt; addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(redrawAll, 120); });

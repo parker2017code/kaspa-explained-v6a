@@ -55,6 +55,12 @@ for (const [label, prep] of [
     await expect.poll(() => page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.timeline instanceof DocumentTimeline && isFinite(a.effect?.getComputedTiming().endTime)).length)).toBe(0);
     // Chapters below the fold use content-visibility:auto, so the browser has not rendered them yet and
     // axe's colour-contrast check reads a stale backdrop. Render everything so axe sees what a reader sees.
+    // Charts draw when their chapter first renders, so visit each chapter the way a reader scrolling would.
+    for (const id of await page.$$eval('main section[id]', ss => ss.map(s => s.id))) {
+      await page.locator('#' + id).scrollIntoViewIfNeeded();
+      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+    }
+    await page.evaluate(() => scrollTo(0, 0));
     await page.addStyleTag({ content: 'main section{content-visibility:visible!important}' });
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     const res = await new AxeBuilder({ page }).analyze();
