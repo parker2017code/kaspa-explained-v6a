@@ -295,7 +295,7 @@
   function drawOrder() {
     if (!snap) return;
     var f = fit(oc), g = f.g, w = f.w, h = f.h, s = w > 700 ? 11 : 8;
-    var top = 34, dagH = h * 0.56, c = (top + dagH) / 2, half = (dagH - top) / 2 - 6, gap = Math.min(18, half * 0.16), bd = (half - gap) / 8.6;
+    var per0 = Math.max(10, Math.floor((w - 48) / (s + 5))), rows0 = Math.max(1, Math.ceil(snap.list.length / per0)), top = 34, dagH = Math.max(h * 0.5, h - 56 - rows0 * (s + 22) - 4), c = (top + dagH) / 2, half = (dagH - top) / 2 - 6, gap = Math.min(18, half * 0.16), bd = (half - gap) / 8.6;
     var X = function (t) { return 24 + (w - 48) * (t - snap.start) / (snap.end - snap.start); };
     var Y = function (b) { if (b.chain) return c; var side = b.lane < 9 ? -1 : 1, k = b.lane < 9 ? 8 - b.lane : b.lane - 9; return c + side * (gap + (k + 0.5 + (b.jit || 0)) * bd); };
     var pos = new Map(); snap.list.forEach(function (b) { pos.set(b.h, { x: X(b.t), y: Y(b) }); });
@@ -321,9 +321,16 @@
     /* the line everyone agrees on */
     var per = Math.max(10, Math.floor((w - 48) / (s + 5))), rowH = s + 22, stripTop = dagH + 56;
     var T = function (i) { return { x: 24 + (i % per) * (s + 5) + s / 2, y: stripTop + Math.floor(i / per) * rowH }; };
-    if (ordered && B > 0) {
-      g.fillStyle = faint; g.globalAlpha = B; g.fillText('The one order every node computes, read left to right', 24, dagH + 34); g.globalAlpha = 1;
+    /* empty slots wait for the line-up (skeleton placeholder pattern): one per block that will get a place */
+    var slots = ordered ? N : snap.list.length;
+    if (B < 1) {
+      g.strokeStyle = faint; g.lineWidth = 1; g.globalAlpha = 0.55 * (1 - B);
+      for (var si = 0; si < slots; si++) { var sq = T(si); g.strokeRect(sq.x - s / 2 + 0.5, sq.y - s / 2 + 0.5, s - 1, s - 1); }
+      g.globalAlpha = 1;
     }
+    g.fillStyle = faint;
+    if (!ordered) g.fillText(w < 560 ? 'One slot per block. Line them up to fill it.' : 'One slot per block: the single order every node will compute. Line them up to fill it.', 24, dagH + 34);
+    else { g.globalAlpha = Math.max(0.6, B); g.fillText('The one order every node computes, read left to right', 24, dagH + 34); g.globalAlpha = 1; }
     snap.list.forEach(function (b) {
       var p = pos.get(b.h), r = rank.has(b.h) ? rank.get(b.h) : -1, x = p.x, y = p.y, lit = r >= 0 && r < visited;
       if (ordered && r >= 0 && B > 0) { var q = T(r), k = ease(B * 1.4 - (r / Math.max(1, N)) * 0.4); x = p.x + (q.x - p.x) * k; y = p.y + (q.y - p.y) * k;

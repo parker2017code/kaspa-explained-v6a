@@ -19,6 +19,7 @@
     if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
     var g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); return { g: g, w: w, h: h };
   }
+  var fmtShort = function (n) { var a = Math.abs(n); return a >= 1e9 ? +(n / 1e9).toPrecision(3) + 'B' : a >= 1e6 ? +(n / 1e6).toPrecision(3) + 'M' : a >= 1e3 ? +(n / 1e3).toPrecision(3) + 'k' : String(Math.round(n)); };
   var fmt = function (n, d) { return n.toLocaleString('en-GB', { maximumFractionDigits: d || 0, minimumFractionDigits: d || 0 }); };
 
   /* Theme and nerd mode */
@@ -139,7 +140,9 @@
   }
   function gReset() {
     G.blocks = [mk([])]; G.secret = []; G.hidingSince = 0; G.released = null;
-    for (var i = 0; i < 3; i++) honestRound();
+    /* start with a full window of history, the way streaming charts pre-fill their buffer */
+    var cw = $('ghostCanvas').clientWidth || 600, rounds = Math.max(3, Math.floor(cw / 62) - 2);
+    for (var i = 0; i < rounds; i++) honestRound();
     $('gOut').textContent = 'Honest miners are working. Each block points at every block its miner had seen.';
     $('gHide').disabled = false; $('gRelease').disabled = true; drawGhost();
   }
@@ -199,13 +202,24 @@
     var all = G.blocks.concat(G.secret);
     var maxL = Math.max.apply(null, all.map(function (b) { return b.layer; }));
     var span = Math.max(6, Math.floor(w / 62)), minL = Math.max(0, maxL - span + 1), dx = (w - 60) / Math.max(1, span - 1);
+    var laneY = [24, 24 + (h - 48) / 2, h - 24];
     var byLayer = {};
     all.forEach(function (b) { (byLayer[b.layer] = byLayer[b.layer] || []).push(b); });
     Object.keys(byLayer).forEach(function (L) {
       var arr = byLayer[L]; arr.sort(function (a, b) { return (a.hidden ? 1 : 0) - (b.hidden ? 1 : 0) || a.id - b.id; });
-      arr.forEach(function (b, i) { b.x = 30 + (L - minL) * dx; b.y = h / 2 + (i - (arr.length - 1) / 2) * 50; });
+      /* fixed swim lanes (two honest, one yours), so the canvas is used top to bottom and your lane is visible before you mine */
+      var hi = 0;
+      arr.forEach(function (b) { var lane = (b.mine || b.hidden) ? 2 : Math.min(1, hi++); b.x = 30 + (L - minL) * dx; b.y = laneY[lane]; });
     });
     g.clearRect(0, 0, w, h);
+    var anyMine = all.some(function (b) { return (b.mine || b.hidden) && b.layer >= minL - 1; });
+    if (!anyMine) {
+      g.save(); g.strokeStyle = css('--orange'); g.globalAlpha = 0.35; g.setLineDash([4, 5]); g.lineWidth = 1;
+      g.beginPath(); g.moveTo(18, laneY[2]); g.lineTo(w - 18, laneY[2]); g.stroke(); g.setLineDash([]);
+      g.globalAlpha = 0.9; g.fillStyle = css('--orange'); g.font = '500 12px ' + css('--mono'); g.textAlign = 'left'; g.textBaseline = 'bottom';
+      g.fillText(G.released ? (w < 480 ? 'Your lane: your blocks are now off to the left' : 'Your lane: the blocks you released have scrolled off to the left') : (w < 480 ? 'Your lane: start mining to fill it' : 'Your lane: blocks you mine in secret appear here'), 18, laneY[2] - 6);
+      g.restore();
+    }
     var vis = function (b) { return b.layer >= minL - 1; };
     g.lineWidth = 1.2;
     all.forEach(function (b) {
@@ -392,15 +406,39 @@
     var sub = R_NOW * 86400, fees = tps * fee * 86400, share = fees / (sub + fees);
     var box = $('minersPlot');
     if (window.Plot) {
-      var wv = box.clientWidth || 600, rows = [{ k: 'New coins', v: sub }, { k: 'Fees', v: fees }];
-      box.replaceChildren(quiet(Plot.plot({ width: wv, height: 92, marginLeft: 0, marginRight: 0, marginTop: 6, marginBottom: 28,
-        style: { background: 'transparent', color: css('--muted'), fontFamily: css('--mono'), fontSize: '11px' },
-        x: { percent: true, domain: [0, 100], ticks: [0, 25, 50, 75, 100], tickFormat: function (d) { return d + '%'; }, label: null },
-        color: { domain: ['New coins', 'Fees'], range: [css('--green'), css('--orange')] },
-        marks: [
-          Plot.barX(rows, Plot.stackX({ x: 'v', fill: 'k', offset: 'normalize', insetRight: 1 })),
-          Plot.text(rows, Plot.stackX({ x: 'v', offset: 'normalize', text: function (d) { var p = d.v / (sub + fees); return p > 0.18 ? d.k + ' ' + fmt(p * 100, 1) + '%' : ''; }, fill: css('--bg'), fontSize: 13, fontWeight: 600 }))
-        ] })));
+      /* dumbbell on a log axis, adapted from the Observable Plot arrow-variation example:
+         a share bar hides a 0.2% slice; a log axis shows both amounts and the gap between them */
+      var wv = box.clientWidth || 600, narrow = wv < 560, lo = 100, hi = 1e9;
+      var fx = Math.max(lo, Math.min(hi, fees)), gapX = fees > 0 ? sub / fees : Infinity;
+      var green = css('--green'), orange = css('--orange'), muted = css('--muted');
+      var gapTxt = fees <= 0 ? 'no fees' : gapX >= 1.05 ? (narrow ? '×' : 'fees ×') + fmt(gapX, gapX < 10 ? 1 : 0) + ' to match' : gapX <= 0.95 ? (narrow ? '' : 'fees already ') + fmt(1 / gapX, 1) + '× new coins' : 'about level';
+      var pts = [{ k: 'New coins', v: sub, c: green, t: (narrow ? 'New coins ' : 'New coins: ') + fmtShort(sub) + ' KAS' }];
+      if (fees > 0) pts.push({ k: 'Fees', v: fx, c: orange, t: (narrow ? 'Fees ' : 'Fees: ') + (fees < lo ? 'under 100' : fmtShort(fees)) + ' KAS' });
+      var marks = [
+        Plot.ruleY([0], { stroke: css('--line'), x1: lo, x2: hi }),
+        Plot.ruleX([sub], { stroke: green, strokeOpacity: 0.35, strokeDasharray: '3,3', y1: -1, y2: 0 })
+      ];
+      var frac = function (v) { return Math.log(v / lo) / Math.log(hi / lo); };
+      var px = (wv - 16) * Math.abs(frac(sub) - frac(fx));
+      if (fees > 0) marks.push(Plot.arrow([{ a: fx, b: sub }], { x1: 'a', x2: 'b', y1: 0, y2: 0, stroke: muted, strokeWidth: 1.5, headLength: 8, inset: 9, bend: false }));
+      var gapMark = null;
+      if (fees > 0 && px > (narrow ? 130 : 190)) marks.push(gapMark = Plot.text([{ x: Math.sqrt(fx * sub) }], { x: 'x', y: 0, dy: -12, text: function () { return gapTxt; }, fill: muted, fontSize: 12 }));
+      marks.push(Plot.dot(pts, { x: 'v', y: 0, r: 7, fill: 'c', stroke: css('--bg'), strokeWidth: 2 }));
+      /* each label opens away from the arrow so the gap note never collides; if that side has no room, it flips */
+      var fs = narrow ? 12 : 13, cw = fs * 0.62, X = function (v) { return 12 + (wv - 24) * frac(v); };
+      pts.forEach(function (d) {
+        var other = d.k === 'Fees' ? sub : fx, dir = fees > 0 && d.v !== other ? (d.v > other ? 1 : -1) : 0, tw = d.t.length * cw, x = X(d.v);
+        if (dir === 0) { dir = x + tw / 2 > wv - 2 ? -1 : x - tw / 2 < 2 ? 1 : 0; }
+        if (dir > 0 && x + 4 + tw > wv - 2) dir = -1;
+        if (dir < 0 && x - 4 - tw < 2) dir = 1;
+        if (d.k !== 'Fees' && fees > 0 && dir !== (sub > fx ? 1 : -1) && gapMark) marks.splice(marks.indexOf(gapMark), 1);
+        marks.push(Plot.text([d], { x: 'v', y: 0, dy: d.k === 'Fees' ? 21 : -19, dx: dir * 4, text: 't', fill: d.c, fontSize: fs, fontWeight: 600, textAnchor: dir > 0 ? 'start' : dir < 0 ? 'end' : 'middle' }));
+      });
+      box.replaceChildren(quiet(Plot.plot({ width: wv, height: 140, marginLeft: 12, marginRight: 12, marginTop: 30, marginBottom: 50,
+        style: { background: 'transparent', color: muted, fontFamily: css('--mono'), fontSize: '11px', overflow: 'visible' },
+        x: { type: 'log', domain: [lo, hi], ticks: narrow ? [1e2, 1e4, 1e6, 1e8] : [1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9], tickFormat: fmtShort, label: 'KAS a day (log scale: each step is ×10)', labelAnchor: 'left', labelOffset: 38 },
+        y: { axis: null, domain: [-1, 1] },
+        marks: marks })));
     }
     $('minersOut').innerHTML = 'Per day: <b>' + fmt(sub) + ' KAS</b> in new coins, <b>' + fmt(fees) + ' KAS</b> in fees. Fees are <b>' + fmt(share * 100, 1) + '%</b> of what miners earn. These are your guesses, not measurements.';
     $('minersGap').textContent = fee > 0 ? 'Arithmetic, not a forecast: at this fee, fees alone would match today’s new coins at about ' + fmt(R_NOW / fee) + ' transactions a second, every second.' : 'At a zero fee, no number of transactions replaces the new coins.';

@@ -172,7 +172,7 @@ body.nerd .secondary-control[hidden]{display:block}
 .board .you b{color:var(--orange)}
 .verdict{font:800 clamp(24px,3.6vw,52px)/1 var(--display);font-stretch:112%;letter-spacing:-.025em;color:var(--muted);text-align:right;margin:0!important;min-height:1em}
 .verdict.bad{color:var(--red)}
-#ghostCanvas{height:340px}
+#ghostCanvas{height:210px;margin-top:4px}
 .seq{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;counter-reset:s}
 .seq li{display:flex;align-items:center;gap:8px;counter-increment:s}
 .seq li::before{content:counter(s);font:12px var(--mono);color:var(--faint)}

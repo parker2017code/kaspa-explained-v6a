@@ -27,6 +27,10 @@ Licence texts sit next to the files: `vendor/licenses/` and `fonts/*.OFL.txt`.
 - Nearest-point hover with `d3.Delaunay.find` and a distance cut-off, from the Observable / d3-delaunay docs.
 - Rolling digit counters as a reading aid: NumberFlow demos by Max Barvian (number-flow.barvian.me).
 - Generous hit areas on small controls (44px minimum): a public X post on invisible hit-area padding.
+- Miner-income dumbbell on a log axis (chapter 5): the arrow mark on a log scale, from the Observable Plot docs and the "Plot: Arrow variation chart" example (observablehq.com/plot/marks/arrow).
+- A full window of history from the first frame (chapter 3): the pre-filled data buffer from Mike Bostock's "Path Transitions" (bost.ocks.org/mike/path/).
+- Empty slots that the line-up fills (chapter 2): the skeleton placeholder pattern.
+- Fixed lanes in the cheat game (chapter 3): the swimlane diagram pattern, with a labelled empty lane for the player's own blocks.
 - Moose book covers: first pages rendered from the book PDFs with `pdftoppm` (poppler). The PDFs are the author's own files in `files/`.
 
 ## Data
