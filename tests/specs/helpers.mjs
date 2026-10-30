@@ -23,3 +23,13 @@ export const offline = page => page.route(/api\.kaspa\.org|mempool\.space/, r =>
 export async function setRange(page, sel, v) {
   await page.locator(sel).evaluate((el, v) => { el.value = String(v); el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); }, v);
 }
+// Scroll-driven entrances move an element for a frame or two after a jump scroll; wait until its box holds still.
+export async function stableBox(loc) {
+  let prev = null;
+  for (let i = 0; i < 40; i++) {
+    const b = await loc.boundingBox();
+    if (prev && b && Math.abs(b.x - prev.x) < 0.5 && Math.abs(b.y - prev.y) < 0.5) return b;
+    prev = b; await loc.page().waitForTimeout(60);
+  }
+  return prev;
+}

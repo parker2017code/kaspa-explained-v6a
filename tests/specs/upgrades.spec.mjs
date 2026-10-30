@@ -1,5 +1,5 @@
 // The new execution layer: inspector, scrub, racetrack, vault drag, waffles, plots, covers, tx shortcut.
-import { test, expect, setRange, offline } from './helpers.mjs';
+import { test, expect, setRange, offline, stableBox } from './helpers.mjs';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('./');
@@ -45,12 +45,12 @@ test('duel: both markers appear on the log ruler and move', async ({ page, error
 test('vault: dragging the coin onto a zone judges the move', async ({ page, errors }) => {
   const coin = page.locator('#vCoin'); await coin.scrollIntoViewIfNeeded();
   const zone = page.locator('[data-try=steal]');
-  const a = await coin.boundingBox(), b = await zone.boundingBox();
+  const a = await stableBox(coin), b = await zone.boundingBox();
   await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
   await page.mouse.down();
   for (let i = 1; i <= 12; i++) await page.mouse.move(a.x + a.width / 2 + (b.x + b.width / 2 - a.x - a.width / 2) * i / 12, a.y + a.height / 2 + (b.y + b.height / 2 - a.y - a.height / 2) * i / 12);
   await page.mouse.up();
-  await expect(page.locator('#vaultOut')).not.toHaveText('Pick a move.');
+  await expect(page.locator('#vaultOut')).not.toContainText('Pick a move.');
   await expect(page.locator('#ruleCold')).toHaveClass('fail');
   await page.click('[data-try=cold]');
   await expect(page.locator('#ruleCold')).toHaveClass('pass');

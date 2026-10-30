@@ -135,7 +135,10 @@
 
   /* Hero: real blocks scroll in at the pace they were mined. */
   var hero = $('liveDag'), renderT = 0, lastF = 0, appeared = new Set(), heroOn = true, seenCount = 0;
-  if ('IntersectionObserver' in window) new IntersectionObserver(function (e) { heroOn = e[0].isIntersecting; if (heroOn && !reduced) requestAnimationFrame(frame); }).observe(hero);
+  if ('IntersectionObserver' in window) new IntersectionObserver(function (e) { heroOn = e[0].isIntersecting; if (heroOn && !reduced) kick(); }).observe(hero);
+  /* One animation chain at a time; it starts after the page has loaded so the first paint isn't competing with it. */
+  var heroGo = false, heroPending = false;
+  function kick() { if (!heroGo || heroPending) return; heroPending = true; requestAnimationFrame(frame); }
   function layout(w, h, pps, top, bottom) {
     var c = (top + h - bottom) / 2, half = (h - bottom - top) / 2, gap = Math.min(22, half * 0.18), bd = (half - gap) / 8.6;
     return { x: function (t) { return w - 40 - (renderT - t) * pps / 1000; }, c: c,
@@ -246,7 +249,8 @@
      and full-rate retina redraws cost more main thread than the rest of the page together. */
   var lowPower = matchMedia('(max-width: 760px), (pointer: coarse)').matches, minGap = lowPower ? 32 : 0;
   function frame(ts) {
-    if (minGap && lastF && ts - lastF < minGap) { if (!reduced && heroOn) requestAnimationFrame(frame); return; }
+    heroPending = false;
+    if (minGap && lastF && ts - lastF < minGap) { if (!reduced && heroOn) kick(); return; }
     var dt = lastF ? Math.min(100, ts - lastF) : 16; lastF = ts;
     if (L.newest) {
       var target = L.newest - 1200;
@@ -259,10 +263,11 @@
     g0.dt = dt; drawDag(f.g, f.w, f.h, g0);
     btcScale(g0.pps);
     hud(ts || performance.now());
-    if (!reduced && heroOn) requestAnimationFrame(frame);
+    if (!reduced && heroOn) kick();
   }
-  if (reduced) { L.subs.push(function () { renderT = L.newest - 1200; requestAnimationFrame(frame); }); }
-  requestAnimationFrame(frame);
+  if (reduced) { L.subs.push(function () { renderT = L.newest - 1200; kick(); }); }
+  function heroStart() { requestAnimationFrame(function () { setTimeout(function () { heroGo = true; kick(); }, 0); }); }
+  if (document.readyState === 'complete') heroStart(); else addEventListener('load', heroStart, { once: true });
   var hoverTip = null;
   hero.addEventListener('mousemove', function (e) {
     var r = hero.getBoundingClientRect(), g0 = geo({ w: r.width, h: r.height }), lay = layout(r.width, r.height, g0.pps, g0.top, g0.bottom);

@@ -430,7 +430,9 @@
 (function () {
   var later = ['vendor/d3.min.js', 'vendor/plot.umd.min.js', 'vendor/interact.min.js', 'js/collision-sim.js', 'js/site.js', 'js/market.js'];
   function go() { later.forEach(function (src) { var e = document.createElement('script'); e.src = src; e.async = false; document.body.appendChild(e); }); }
-  if (document.readyState === 'complete') setTimeout(go, 0); else addEventListener('load', function () { setTimeout(go, 0); }, { once: true });
+  /* After load and after the next frame has painted, so the first paint never waits on these. */
+  function soon() { requestAnimationFrame(function () { setTimeout(go, 0); }); }
+  if (document.readyState === 'complete') soon(); else addEventListener('load', soon, { once: true });
 })();
 </script>
 </body>

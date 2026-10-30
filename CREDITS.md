@@ -64,4 +64,5 @@ The tests in `tests/` (Playwright, axe-core) are not served to readers; they che
 - IntersectionObserver gating (MDN, web.dev "Lazy-load offscreen work"): the collision simulation only runs timers while it is on screen.
 - Ambient canvas budget: the hero background is capped at 30 fps and devicePixelRatio 1.5 on small/touch screens (common canvas guidance, MDN "Optimizing canvas").
 - Reserved heights for content that fills in later (web.dev "Optimize Cumulative Layout Shift"): the two-network race readouts and piles have min-heights.
+- Wait for the first paint before starting deferred work (requestAnimationFrame then setTimeout, the "after next paint" idiom from web.dev's INP guidance): the late scripts and the hero animation start only after load and one painted frame, and the hero runs a single animation chain.
 - Readiness flag: `html[data-ready]` is set when the late scripts finish; the tests wait for it before interacting.
