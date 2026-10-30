@@ -171,3 +171,20 @@ test('main page links to every deep page, and the link carries a view-transition
   await expect(page).toHaveURL(/127\.0\.0\.1:\d+\/(\?[^#]*)?(#c1)?$|github\.io\/kaspa-explained-v6a\/(\?[^#]*)?(#c1)?$/);
   await expect(page.locator('#c1')).toBeInViewport({ timeout: 5_000 });
 });
+
+test('fast tap: a button tapped before the section scripts arrive still does its job', async ({ context, baseURL }) => {
+  const p = await context.newPage();
+  let release; const held = new Promise(f => { release = f; });
+  await p.route(/js\/market\.js/, async r => { await held; r.continue(); });
+  await p.goto(baseURL || './', { waitUntil: 'domcontentloaded' });
+  const first = p.locator('[data-try]').first();
+  await first.scrollIntoViewIfNeeded();
+  expect(await p.evaluate(() => document.documentElement.dataset.ready || '')).toBe('');
+  await first.click();
+  await expect(first).toHaveAttribute('aria-busy', 'true');
+  release();
+  await p.waitForFunction(() => document.documentElement.dataset.ready, null, { timeout: 20000 });
+  await expect(p.locator('#vaultOut')).not.toContainText('Pick a move.');
+  await expect(first).not.toHaveAttribute('aria-busy', 'true');
+  await p.close();
+});

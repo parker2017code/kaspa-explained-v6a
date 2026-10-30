@@ -53,6 +53,10 @@ for (const [label, prep] of [
     await page.locator('.hero-in:not(.pre)').waitFor({ state: 'attached' });
     // Let the hero fade-in finish; axe mid-transition reads half-opacity text as low contrast.
     await expect.poll(() => page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.timeline instanceof DocumentTimeline && isFinite(a.effect?.getComputedTiming().endTime)).length)).toBe(0);
+    // Chapters below the fold use content-visibility:auto, so the browser has not rendered them yet and
+    // axe's colour-contrast check reads a stale backdrop. Render everything so axe sees what a reader sees.
+    await page.addStyleTag({ content: 'main section{content-visibility:visible!important}' });
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
     const res = await new AxeBuilder({ page }).analyze();
     const bad = res.violations.filter(v => ['serious', 'critical'].includes(v.impact))
       .map(v => `${v.id}: ${v.nodes.map(n => n.target.join(' ')).join(', ')}`);

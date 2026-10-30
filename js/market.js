@@ -127,3 +127,4 @@
 })();
 /* Last of the late scripts: mark the page fully interactive (tests wait on this). */
 document.documentElement.dataset.ready = '1';
+if (window.KUI && KUI.flushTap) KUI.flushTap();

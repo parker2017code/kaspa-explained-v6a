@@ -56,4 +56,22 @@
     else if (!ro) { s.w = c.clientWidth; s.h = c.clientHeight; }
     return s;
   };
+  /* Fast taps: the section scripts arrive just after first paint. A button tapped before they are wired
+     is remembered and replayed once they are (market.js calls KUI.flushTap), instead of doing nothing. */
+  var tapQ = null, tapOn = true;
+  function tapCap(e) {
+    if (!tapOn || document.documentElement.dataset.ready) return;
+    var t = e.target && e.target.closest && e.target.closest('button');
+    if (!t || t.disabled || !e.isTrusted) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (tapQ) tapQ.removeAttribute('aria-busy');
+    tapQ = t; t.setAttribute('aria-busy', 'true');
+  }
+  document.addEventListener('click', tapCap, true);
+  KUI.flushTap = function () {
+    if (!tapOn) return; tapOn = false; document.removeEventListener('click', tapCap, true);
+    var t = tapQ; tapQ = null; if (t) { t.removeAttribute('aria-busy'); t.click(); }
+  };
+  /* If a section script never arrives (offline), stop holding taps. */
+  addEventListener('load', function () { setTimeout(function () { if (tapOn) { tapOn = false; document.removeEventListener('click', tapCap, true); if (tapQ) tapQ.removeAttribute('aria-busy'); tapQ = null; } }, 15000); }, { once: true });
 })();

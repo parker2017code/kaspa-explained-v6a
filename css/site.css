@@ -577,3 +577,11 @@ button.link{background:none;border:0;padding:0 2px;font:inherit;color:var(--gree
 @media (max-width:360px){.duel .side-out{min-height:6lh}}
 
 .num.stale{opacity:.55}
+
+/* Below-the-fold chapters skip layout and paint until they near the viewport (web.dev/articles/content-visibility).
+   'auto' in contain-intrinsic-size keeps each chapter's real height once it has been rendered, so the page does not jump. */
+#c1,#c2,#c3,#c4,#c5,#money,#c6,#c7,#tally,#finish,#moose{content-visibility:auto;contain-intrinsic-size:auto none auto 2000px}
+#c1{contain-intrinsic-block-size:auto 1923px}#c2{contain-intrinsic-block-size:auto 2451px}#c3{contain-intrinsic-block-size:auto 1783px}#c4{contain-intrinsic-block-size:auto 2061px}#c5{contain-intrinsic-block-size:auto 3644px}#money{contain-intrinsic-block-size:auto 2053px}#c6{contain-intrinsic-block-size:auto 2904px}#c7{contain-intrinsic-block-size:auto 1686px}#tally{contain-intrinsic-block-size:auto 876px}#finish{contain-intrinsic-block-size:auto 633px}#moose{contain-intrinsic-block-size:auto 2187px}
+@media (min-width:900px){#c1{contain-intrinsic-block-size:auto 1435px}#c2{contain-intrinsic-block-size:auto 2135px}#c3{contain-intrinsic-block-size:auto 1596px}#c4{contain-intrinsic-block-size:auto 1698px}#c5{contain-intrinsic-block-size:auto 2876px}#money{contain-intrinsic-block-size:auto 1534px}#c6{contain-intrinsic-block-size:auto 2465px}#c7{contain-intrinsic-block-size:auto 1397px}#tally{contain-intrinsic-block-size:auto 976px}#finish{contain-intrinsic-block-size:auto 675px}#moose{contain-intrinsic-block-size:auto 1799px}}
+@media print{#c1,#c2,#c3,#c4,#c5,#money,#c6,#c7,#tally,#finish,#moose{content-visibility:visible}}
+button[aria-busy=true]{cursor:progress;opacity:.7}
