@@ -1,6 +1,6 @@
 // Version A: margin notes. Behavior, not markup: where a note sits, and that its marker reaches it.
 import { test, expect } from './helpers.mjs';
-test.beforeEach(async ({ page }) => { await page.goto('/'); });
+test.beforeEach(async ({ page }) => { await page.goto('./'); });
 
 test('each note sits beside its marker on desktop, inline on mobile', async ({ page, errors }, info) => {
   for (const id of ['sn-fair', 'sn-wallet', 'sn-node']) {

@@ -84,3 +84,12 @@ footer{font-size:16px}
   .switch button{white-space:nowrap;font-size:15px;padding:6px 5px}
   .hud b{font-size:26px}
 }
+@media (max-width:640px){
+  .hero{height:auto;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end}
+  .hero-in{position:relative;left:auto;right:auto;bottom:auto;margin:350px 0 24px}
+}
+@media (max-width:380px){
+  .brand{font-size:14px}
+  .switch{gap:4px}
+  .switch button{font-size:13px;padding:6px 3px}
+}
