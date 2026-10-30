@@ -19,7 +19,7 @@ Licence texts sit next to the files: `vendor/licenses/` and `fonts/*.OFL.txt`.
 
 | Font | Licence | File |
 |---|---|---|
-| Mona Sans, GitHub (via @fontsource-variable/mona-sans 5.3.0) | SIL OFL 1.1 | `fonts/mona-sans-var.woff2` |
+| Source Serif 4, Adobe (via @fontsource-variable/source-serif-4 5.3.1) | SIL OFL 1.1 | `fonts/source-serif-4-latin-wght-normal.woff2`, `fonts/source-serif-4-latin-wght-italic.woff2` |
 | Monaspace Neon, GitHub Next (via @fontsource/monaspace-neon 5.3.0) | SIL OFL 1.1 | `fonts/monaspace-neon-latin-400-normal.woff2`, `fonts/monaspace-neon-latin-600-normal.woff2` |
 
 ## Patterns adapted (no code copied)
@@ -33,8 +33,28 @@ Licence texts sit next to the files: `vendor/licenses/` and `fonts/*.OFL.txt`.
 - Fixed lanes in the cheat game (chapter 3): the swimlane diagram pattern, with a labelled empty lane for the player's own blocks.
 - Moose book covers: first pages rendered from the book PDFs with `pdftoppm` (poppler). The PDFs are the author's own files in `files/`.
 
+## Look, scroll and navigation (adapted patterns, no code copied unless listed above)
+
+- Paper-and-ink reading layout, one serif column, numbered figures with captions that state the takeaway: Tufte CSS (Dave Liepmann, MIT, github.com/edwardtufte/tufte-css) and the Distill article guide (distill.pub/guide). Replaces the earlier dark neon look.
+- Fluid type with `clamp()` so headings scale smoothly from 320 to 2560 px: the Utopia type calculator (utopia.fyi).
+- Figures settle into place as they scroll in, using CSS scroll-driven animations (`animation-timeline: view()`), transform only and behind `@supports`: Chrome's scroll-driven animations guide (developer.chrome.com/docs/css-ui/scroll-driven-animations).
+- "Go deeper" links that carry their title into the deep-dive page's heading: cross-document View Transitions with `pageswap` / `pagereveal` (developer.chrome.com/docs/web-platform/view-transitions/cross-document, MDN). `js/vt.js`.
+- Expanders that open smoothly: `::details-content` with `interpolate-size: allow-keywords` (nerdy.dev, "Open and close transitions for the details element"; MDN).
+- Tap-to-define glossary terms on first use, with a hit area padded to at least 24 px.
+- Comparison table that scrolls sideways on phones with a sticky first column: the responsive data table pattern (MDN, Adrian Roselli's "Under-Engineered Responsive Tables").
+- Scrollama was shortlisted for the deep pages but not used: native scrolling with one interactive per page was simpler and lighter.
+
+## Deep-dive interactives (`learn/`)
+
+- Zero knowledge: Ali Baba's cave, from Quisquater et al., "How to Explain Zero-Knowledge Protocols to Your Children", CRYPTO '89 (doi.org/10.1007/0-387-34805-0_60). Labelled a simulation.
+- The DAG: a block's past, future and anticone, on 261 real blocks recorded from api.kaspa.org; terms from the PHANTOM/GHOSTDAG paper (eprint.iacr.org/2018/104).
+- Security: the catch-up probability from section 11 of the Bitcoin white paper (bitcoin.org/bitcoin.pdf). Kaspa's 1 to 3 s figure is Yonatan Sompolinsky's.
+- vProgs: "run it once, check it fast", drawn as shape only, not a benchmark; from vprogs.xyz.
+- Supply and fees: the published monthly emission schedule (wiki.kaspa.org/en/tokenomics) and live supply from api.kaspa.org/info/coinsupply.
+- Price and market: CoinGecko's public API (`/coins/markets`, `/global`, `/coins/kaspa/market_chart`), with dated fallbacks when it can't be reached. Gold above ground: World Gold Council, 216,265 t at end of 2024.
+
 ## Data
 
-Live numbers come from the public Kaspa REST API (api.kaspa.org) and, for Bitcoin's latest block, mempool.space. When the Kaspa API is unreachable the page says so and shows a labelled simulation; the Bitcoin figures simply stay hidden.
+Live numbers come from the public Kaspa REST API (api.kaspa.org), mempool.space for Bitcoin's latest block, and CoinGecko for prices and market size. Every figure shows its source and the time it was read; when a source is unreachable the page shows a dated recorded value and says so. When the Kaspa API is unreachable the page says so and shows a labelled simulation; the Bitcoin figures simply stay hidden.
 
-The tests in `tests/` (Playwright, axe-core) are not served to readers; they check the page at 1440, 390 and 320 px wide.
+The tests in `tests/` (Playwright, axe-core) are not served to readers; they check the page at 320, 390, 768, 1280, 1440, 1920 and 2560 px wide, and every deep-dive page at 390 and 1440.

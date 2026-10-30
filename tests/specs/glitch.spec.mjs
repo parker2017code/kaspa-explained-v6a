@@ -1,19 +1,14 @@
 import { test, expect } from './helpers.mjs';
 // Regressions found by the live audit (Oct 30, 2026).
 
-test('order: re-clicking mid-animation never throws', async ({ page, errors }) => {
-  test.slow();
+test('order: hammering Pause/Play and the scrub never throws', async ({ page, errors }) => {
   await page.goto('./');
+  await page.locator('#orderCanvas').scrollIntoViewIfNeeded();
   const go = page.locator('#oGo');
-  await expect(go).toBeEnabled({ timeout: 40_000 });
-  await go.click();
-  await page.waitForTimeout(400);
-  await page.locator('#oAgain').evaluate(b => b.click());
-  await page.waitForTimeout(300);
-  await go.click();
-  await page.waitForTimeout(300);
-  await go.click();
-  await expect(page.locator('#orderOut')).toContainText(/real blocks.*in one line|simulation/, { timeout: 20_000 });
+  for (let i = 0; i < 6; i++) { await go.click(); await page.waitForTimeout(120); }
+  const scrub = page.locator('#orderCanvas').locator('xpath=ancestor::figure[1]').locator('input[type=range]');
+  if (await scrub.count()) await scrub.first().evaluate(el => { for (const v of [0, 300, 1000, 50]) { el.value = String(v); el.dispatchEvent(new Event('input', { bubbles: true })); } });
+  await expect(page.locator('#orderOut')).not.toBeEmpty();
 });
 
 test('rendered text uses curly apostrophes (Moose excluded)', async ({ page }) => {

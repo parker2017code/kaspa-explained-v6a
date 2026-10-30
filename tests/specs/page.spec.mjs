@@ -51,7 +51,7 @@ for (const [label, prep] of [
     await page.locator('#liveSource').filter({ hasText: /Live|Simulation/ }).waitFor();
     await prep(page);
     // Let the hero fade-in finish; axe mid-transition reads half-opacity text as low contrast.
-    await expect.poll(() => page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running').length)).toBe(0);
+    await expect.poll(() => page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.timeline instanceof DocumentTimeline && isFinite(a.effect?.getComputedTiming().endTime)).length)).toBe(0);
     const res = await new AxeBuilder({ page }).analyze();
     const bad = res.violations.filter(v => ['serious', 'critical'].includes(v.impact))
       .map(v => `${v.id}: ${v.nodes.map(n => n.target.join(' ')).join(', ')}`);

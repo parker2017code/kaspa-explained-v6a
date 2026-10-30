@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Price, size and risk · Kaspa Explained</title>
+<meta name="description" content="Kaspa’s price over a year, what market cap means, and the plain risks. Not investment advice.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f5f1e8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22%3E%3Ccircle cx=%224%22 cy=%2210%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3Ccircle cx=%2216%22 cy=%224.5%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3Ccircle cx=%2216%22 cy=%2215.5%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3C/svg%3E">
+<link rel="preload" href="../../fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../css/site.css">
+<script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('ke-theme2');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body class="deep-page">
+<header class="bar"><div class="bar-in">
+  <a class="brand" href="../../"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4" cy="10" r="2.6" fill="currentColor"/><circle cx="16" cy="4.5" r="2.6" fill="currentColor"/><circle cx="16" cy="15.5" r="2.6" fill="currentColor"/><path d="M6 9 14 5M6 11l8 4" stroke="currentColor" stroke-width="1.4"/></svg>Kaspa Explained</a>
+  <div class="switch"><button type="button" id="theme" aria-label="Switch day or night colours">Night</button></div>
+</div><div class="progress" id="progress"></div></header>
+<main class="deep" id="main">
+  <a class="back" href="../../#money" data-back>← Back to “Price and risk”</a>
+  <p class="kicker">Go deeper · Price and market</p>
+  <h1>Price, size and risk</h1>
+  <p class="lede">KAS trades on exchanges like any coin, and its price swings hard: below is a year of it, day by day. None of this is advice.</p>
+  <section>
+    <h2>Why it matters to you</h2>
+    <p>If you are thinking of buying, the price history tells you one thing for sure: it can fall a long way. A coin worth something today was worth much more, or much less, a few months ago.</p>
+  </section>
+  <section>
+    <h2>A year of prices</h2>
+    <p>Drag along the line, or tap it, to pick a day. You’ll see what you’d have paid then, and where it went from there.</p>
+    <figure class="inter" data-inter="price">
+      <canvas id="pxCanvas" height="260" aria-label="Kaspa daily price in US dollars over a year"></canvas>
+      <div class="readout grid3" aria-live="polite"><div><span>Day</span><b id="pxDay">–</b></div><div><span>Price then</span><b id="pxThen">–</b></div><div><span>Change to the last day</span><b id="pxChg">–</b></div></div>
+      <figcaption><b>Recorded</b><span id="pxTag">Daily prices from the CoinGecko API, recorded 30 Oct 2026.</span></figcaption>
+    </figure>
+  </section>
+  <section>
+    <h2>What the size numbers mean</h2>
+    <p><button class="term" type="button" data-pop="Market cap: price × coins in circulation. A rough size, not money anyone could cash out at once.">market cap</button> is the price times the coins in circulation. It’s a rough size, not money anyone could cash out: selling a big share would push the price down long before it was sold.</p>
+    <p>Rank is just the order by market cap. It changes every day.</p>
+  </section>
+  <section>
+    <h2>The risks, plainly</h2>
+    <ul class="risks-plain">
+      <li><b>It swings hard.</b> Falls of 80% or more from a high have happened, to Kaspa and to most coins.</li>
+      <li><b>It’s a bet on use.</b> No company, no earnings, no dividend. The price only reflects what people will pay.</li>
+      <li><b>Competition.</b> Bitcoin is far bigger; Ethereum and Solana already host most apps; <button class="term" type="button" data-pop="Stablecoin: a token a company backs with dollars it holds, so it stays worth $1. The company can freeze it.">stablecoin</button>s already move most dollars on-chain.</li>
+      <li><b>Keys are yours.</b> Lose the seed words of your <button class="term" type="button" data-pop="Wallet: an app that holds your keys and lets you send and receive. Whoever has the seed words has the coins.">wallet</button> and the coins are gone. Nobody can reset it.</li>
+      <li><b>Rules and tax</b> differ by country and change.</li>
+    </ul>
+    <p class="no-advice">Not investment advice. If you buy, buy only what you could lose entirely.</p>
+  </section>
+  <section class="sources-sec"><h2>Sources</h2><ul class="sources"><li>Prices: <a href="https://www.coingecko.com/en/coins/kaspa">CoinGecko</a> public API, market chart, 365 days, recorded 30 Oct 2026, 14:39 CET.</li></ul></section>
+  <nav class="next-deep" aria-label="Next deep dive"><a class="deeper" href="../vprogs/"><span class="k">Next deep dive</span><span class="t">Apps that prove instead of asking you to trust</span><span class="a" aria-hidden="true">→</span></a></nav>
+</main>
+<footer>Independent explainer, not official, not investment advice. <a href="../../">Back to the start</a> · <a href="../../CREDITS.md">Credits</a>.</footer>
+<script src="../../js/deep.js" defer></script>
+</body>
+</html>

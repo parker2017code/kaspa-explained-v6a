@@ -31,9 +31,9 @@ test('theme toggle flips and keeps the coins result', async ({ page, errors }) =
   await expect(page.locator('#coinsOut')).toContainText('They landed in the order');
   const before = await page.locator('#coinsCanvas').screenshot();
   await page.click('#theme');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await page.click('#theme');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.click('#theme');
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme', 'dark');
   const after = await page.locator('#coinsCanvas').screenshot();
   expect(after.equals(before), 'coins canvas reset by redraw').toBe(true);
 });
@@ -46,14 +46,25 @@ test('collision toy: sliders change the readouts', async ({ page, errors }) => {
   await expect(page.locator('#cs-resultLine')).toContainText('%');
 });
 
-test('order: line up real blocks', async ({ page, errors }) => {
-  test.slow();
+test('order: plays a recorded sample at once, no button needed; Pause/Play toggles', async ({ page, errors }) => {
+  await page.locator('#orderCanvas').scrollIntoViewIfNeeded();
+  await expect(page.locator('.sample-tag').first()).toContainText(/Recorded sample|Live/, { timeout: 5_000 });
+  await expect(page.locator('#orderOut')).toContainText(/Threading|in one line/, { timeout: 5_000 });
+  await expect(page.locator('#orderOut')).toContainText(/blocks, mined in parallel in ten seconds, now in one line/, { timeout: 15_000 });
   const go = page.locator('#oGo');
-  await expect(go).toBeEnabled({ timeout: 40_000 });
+  await expect(go).toHaveText('Pause');
   await go.click();
-  await expect(page.locator('#orderOut')).toContainText(/real blocks.*in one line|simulation/, { timeout: 20_000 });
+  await expect(go).toHaveText('Play');
+  await go.click();
+  await expect(go).toHaveText('Pause');
+});
+
+test('order: swaps to live blocks once they arrive, then offers a fresh ten seconds', async ({ page, errors }) => {
+  test.slow();
+  await page.locator('#orderCanvas').scrollIntoViewIfNeeded();
+  await expect(page.locator('#oAgain')).toBeVisible({ timeout: 60_000 });
   await page.click('#oAgain');
-  await expect(page.locator('#orderOut')).toContainText('fresh ten seconds');
+  await expect(page.locator('#orderOut')).toContainText(/real blocks.*in one line|Threading/, { timeout: 20_000 });
 });
 
 test('ghost: hide, release, verdict; reset works', async ({ page, errors }) => {
@@ -90,7 +101,7 @@ test('duel: pay twice, fast-forward settles in six blocks, one loop only', async
 });
 
 test('race: stronger attacker needs more Bitcoin blocks (monotonic)', async ({ page, errors }) => {
-  await page.click('#nerd');
+  await page.goto('./learn/security/');
   const blocks = [];
   for (const q of [5, 10, 20, 30, 40, 45]) {
     await setRange(page, '#qIn', q);

@@ -3,7 +3,7 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var css = function (v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); };
+  var css = KUI.css;
   var store = {
     get: function (k, d) { try { var v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
     set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
@@ -17,18 +17,20 @@
     if (!c.dataset.h) { c.dataset.h = c.getAttribute('height') || ''; if (c.dataset.h) c.style.height = c.dataset.h + 'px'; }
     var dpr = window.devicePixelRatio || 1, w = c.clientWidth, h = c.dataset.h ? +c.dataset.h : c.clientHeight;
     if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
-    var g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); return { g: g, w: w, h: h };
+    var g = c._g || (c._g = c.getContext('2d')); g.setTransform(dpr, 0, 0, dpr, 0, 0); return { g: g, w: w, h: h };
   }
   var fmtShort = function (n) { var a = Math.abs(n); return a >= 1e9 ? +(n / 1e9).toPrecision(3) + 'B' : a >= 1e6 ? +(n / 1e6).toPrecision(3) + 'M' : a >= 1e3 ? +(n / 1e3).toPrecision(3) + 'k' : String(Math.round(n)); };
-  var fmt = function (n, d) { return n.toLocaleString('en-GB', { maximumFractionDigits: d || 0, minimumFractionDigits: d || 0 }); };
+  var fmt = KUI.fmt;
 
   /* Theme and nerd mode */
   var themeBtn = $('theme');
-  function paintTheme() { themeBtn.textContent = document.documentElement.dataset.theme === 'light' ? 'Dark' : 'Light'; }
+  /* Paper is the default; "dark" is the night palette. */
+  function paintTheme() { themeBtn.textContent = document.documentElement.dataset.theme === 'dark' ? 'Day' : 'Night'; }
   themeBtn.addEventListener('click', function () {
-    var t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-    document.documentElement.dataset.theme = t; store.set('ke-theme-v', t);
-    try { localStorage.setItem('ke-theme', t); } catch (e) {}
+    var night = document.documentElement.dataset.theme !== 'dark';
+    if (night) document.documentElement.dataset.theme = 'dark'; else delete document.documentElement.dataset.theme;
+    try { if (night) localStorage.setItem('ke-theme2', 'dark'); else localStorage.removeItem('ke-theme2'); } catch (e) {}
+    var mt = document.querySelectorAll('meta[name="theme-color"]'); mt.forEach(function (m) { m.setAttribute('content', night ? '#181612' : '#f5f1e8'); });
     paintTheme(); redrawAll();
   });
   paintTheme();
@@ -36,6 +38,7 @@
   function setNerd(on) {
     document.body.classList.toggle('nerd', on);
     nerdBtn.setAttribute('aria-pressed', String(on));
+    var nst = nerdBtn.querySelector('.st'); if (nst) nst.textContent = on ? 'on' : 'off';
     document.querySelectorAll('details.nerd').forEach(function (d) { d.open = on; });
     store.set('ke-nerd', on);
   }
@@ -74,11 +77,27 @@
     if (seen[s.id]) a.classList.add('seen');
     dots.appendChild(a); s._dot = a;
   });
+  var chapSel = $('chapSel');
+  if (chapSel) {
+    var o0 = document.createElement('option'); o0.value = ''; o0.textContent = 'Chapters'; chapSel.appendChild(o0);
+    var n = 0;
+    chapters.forEach(function (s) {
+      var o = document.createElement('option'); o.value = s.id;
+      o.textContent = (s.classList.contains('numbered') ? (++n) + '. ' : '') + s.dataset.title; chapSel.appendChild(o);
+    });
+    chapSel.addEventListener('change', function () {
+      var t = chapSel.value && $(chapSel.value); if (!t) return;
+      history.pushState(null, '', '#' + t.id);
+      t.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+      var h = t.querySelector('h2'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+    });
+  }
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (en) {
       if (!en.isIntersecting) return;
       var s = en.target;
       chapters.forEach(function (c) { c._dot.classList.toggle('here', c === s); });
+      if (chapSel && document.activeElement !== chapSel) chapSel.value = s.id;
       seen[s.id] = 1; s._dot.classList.add('seen'); store.set('ke-seen', seen);
     });
   }, { rootMargin: '-45% 0px -50% 0px' });
@@ -172,7 +191,14 @@
   }
   function startAuto() { if (!auto && !reduced) auto = setInterval(autoStep, 650); }
   function stopAuto() { clearInterval(auto); auto = null; }
+  /* On a phone the buttons sit below the graph; bring the graph back into view so the attack is visible. */
+  function showStage() {
+    var c = $('ghostCanvas').getBoundingClientRect(), r = $('gRelease').getBoundingClientRect(), vh = window.innerHeight;
+    if (r.bottom - c.top > vh - 24) return;
+    if (c.top < 12 || r.bottom > vh - 12) window.scrollBy({ top: c.top - 12, behavior: reduced ? 'auto' : 'smooth' });
+  }
   $('gHide').addEventListener('click', function () {
+    showStage();
     G.base = tips(G.blocks)[0]; G.secret = []; G.released = null; G.hidingSince = 0; atkAcc = 0; hiding = true;
     $('gHide').disabled = true; $('gRelease').disabled = true;
     $('gOut').textContent = 'You went dark. Your blocks only point at each other now.';
@@ -181,6 +207,7 @@
     drawGhost();
   });
   $('gRelease').addEventListener('click', function () {
+    showStage();
     hiding = false;
     G.secret.forEach(function (b) { b.hidden = false; b.id = G.blocks.length; b.mine = true; G.blocks.push(b); });
     var released = G.secret; G.secret = [];
@@ -310,34 +337,6 @@
     })(t0);
   });
 
-  /* Chapter 4: Satoshi's catch-up formula for Bitcoin */
-  function nakamoto(q, z) {
-    var p = 1 - q, lam = z * (q / p), sum = 1, pois = Math.exp(-lam);
-    for (var k = 0; k <= z; k++) { if (k > 0) pois *= lam / k; sum -= pois * (1 - Math.pow(q / p, z - k)); }
-    return Math.max(0, sum);
-  }
-  function drawRace() {
-    var q = +$('qIn').value / 100; $('qVal').textContent = Math.round(q * 100) + '%'; setParam('q', Math.round(q * 100));
-    var c = $('raceCanvas'), f = fit(c), g = f.g, w = f.w, h = f.h, pad = 34;
-    g.clearRect(0, 0, w, h);
-    g.strokeStyle = css('--line'); g.beginPath(); g.moveTo(pad, 10); g.lineTo(pad, h - 24); g.lineTo(w - 6, h - 24); g.stroke();
-    g.fillStyle = css('--faint'); g.font = '12px ' + css('--font'); g.textAlign = 'left';
-    g.fillText('100%', 0, 14); g.fillText('0%', 8, h - 26);
-    [0, 30, 60, 90, 120].forEach(function (m) { g.textAlign = m === 0 ? 'left' : m === 120 ? 'right' : 'center'; g.fillText(m + ' min', pad + (w - pad - 10) * m / 120 + (m === 120 ? 10 : 0), h - 8); });
-    g.strokeStyle = css('--orange'); g.lineWidth = 2; g.beginPath();
-    for (var m = 0; m <= 120; m += 1) {
-      var z = Math.floor(m / 10), P = nakamoto(q, z), x = pad + (w - pad - 10) * m / 120, y = 10 + (h - 34) * (1 - P);
-      if (m === 0) g.moveTo(x, y); else g.lineTo(x, y);
-    }
-    g.stroke();
-    g.fillStyle = css('--green'); g.beginPath(); g.arc(pad + 2, h - 26, 5, 0, 7); g.fill();
-    g.textAlign = 'left'; g.fillText('Kaspa: seconds', pad + 12, h - 34);
-    var zz = 0; while (zz < 2000 && nakamoto(q, zz) > 0.001) zz++;
-    $('raceOut').innerHTML = 'Against a ' + Math.round(q * 100) + '% attacker, Bitcoin needs <b>' + zz + ' blocks</b>, about <b>' + (zz * 10 >= 120 ? fmt(zz * 10 / 60, 1) + ' hours' : zz * 10 + ' minutes') + '</b>, before the chance of reversal drops under 0.1%.';
-  }
-  var q0 = +params.get('q'); if (q0 >= 5 && q0 <= 45) $('qIn').value = q0;
-  $('qIn').addEventListener('input', drawRace);
-
   /* Chapter 5: insiders at launch */
   var FAIR = [['XRP', 100], ['Ethereum', 16.7], ['Cardano', 11.52], ['Bitcoin', 0], ['Kaspa', 0]];
   /* Waffle charts: Observable Plot's waffleY mark (ISC), one small chart per coin, 100 cells each. */
@@ -370,7 +369,8 @@
     }
     return s;
   }
-  function monthOf(y) { return new Date(Date.UTC(Math.floor(y), Math.floor((y % 1) * 12 + 1e-6), 1)).toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' }); }
+  var monthFmt = new Intl.DateTimeFormat('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  function monthOf(y) { return monthFmt.format(new Date(Date.UTC(Math.floor(y), Math.floor((y % 1) * 12 + 1e-6), 1))); }
   function drawEmit() {
     var y = +$('yIn').value; setParam('y', y.toFixed(2));
     var month = monthOf(y);
@@ -507,10 +507,10 @@
       g.select('text').attr('text-anchor', xv > TR.w - 70 ? 'end' : xv < 70 ? 'start' : 'middle');
     });
   }
-  function mmss(ms) { var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
+  function mmss(ms) { var s = Math.floor(Math.max(0, ms) / 1000); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
   $('dGo').addEventListener('click', function () {
     duel = { id: (duel ? duel.id : 0) + 1, t0: performance.now(), wall: Date.now(), fast: false, btcH0: btcTip ? btcTip.h : null };
-    $('dFast').hidden = false; $('dGo').textContent = 'Pay again'; $('dKpile').textContent = '';
+    $('dFast').hidden = false; $('dGo').textContent = 'Pay again'; $('dKpile').textContent = ''; $('dBfastTag').textContent = '\u00a0';
     var run = duel.id;
     (function step(now) {
       if (!duel || duel.id !== run) return; var d = duel, t = Math.max(0, now - d.t0);
@@ -524,10 +524,10 @@
       $('dKout').innerHTML = (k < 1 ? 'Confirming.' : '<b>Done.</b> Settled within Sompolinsky’s 1 to 3 seconds.') + kTxt;
       var bt = d.fast ? d.fastT + (now - d.fastAt) * 600 : t;
       var conf = d.fast ? Math.min(6, Math.floor(bt / 600000)) : (btcTip && d.btcH0 !== null ? Math.max(0, btcTip.h - d.btcH0) : 0);
-      $('dBclock').textContent = mmss(Math.min(bt, 3600000)) + (d.fast ? ' (×600)' : '');
+      $('dBclock').textContent = mmss(Math.min(bt, 3600000)); $('dBfastTag').textContent = d.fast ? '×600 speed' : '\u00a0';
       $('dBfill').style.width = (Math.min(6, conf) / 6 * 100) + '%';
       document.querySelectorAll('#dBslots i').forEach(function (el, i) { el.classList.toggle('on', i < conf); });
-      var since = btcTip ? mmss(Date.now() - btcTip.t) : null;
+      var since = btcTip ? (Date.now() - btcTip.t < 1000 ? 'moments' : mmss(Date.now() - btcTip.t)) : null;
       $('dBout').innerHTML = conf >= 6 ? '<b>Settled.</b> Six confirmations.' : (d.fast ? conf + ' of 6 confirmations. Simulated at the average pace, one block per ten minutes.' :
         'Waiting for the next real Bitcoin block' + (since ? ': the last one, #' + fmt(btcTip.h) + ', was ' + since + ' ago.' : '.') + ' Then five more.');
       moveTrack(Math.min(t, KS) / 1000, Math.min(bt, 3600000 * 2) / 1000);
@@ -546,8 +546,8 @@
   /* The coin is dragged with interact.js (MIT) onto drop zones; the zones are also plain buttons. */
   var RULES = { steal: ['fail', ''], split: ['fail', ''], cold: ['pass', ''], wait: ['', 'pass'] };
   var coin = $('vCoin'), cx = 0, cy = 0, dropped = false;
-  function place(x, y, animate) {
-    var from = coin.style.transform || 'translate(0px,0px)', to = 'translate(' + x + 'px,' + y + 'px)';
+  function place(x, y, animate, sc) {
+    var from = coin.style.transform || 'translate(0px,0px) scale(1)', to = 'translate(' + x + 'px,' + y + 'px) scale(' + (sc || 1) + ')';
     cx = x; cy = y; coin.style.transform = to;
     if (animate && !reduced && coin.animate) coin.animate([{ transform: from }, { transform: to }], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' });
   }
@@ -556,9 +556,11 @@
     var r = RULES[move];
     $('ruleCold').className = r[0]; $('ruleDate').className = r[1];
     document.querySelectorAll('.zone').forEach(function (z) { z.classList.toggle('picked', z === zone); z.classList.toggle('no', z === zone && r[0] === 'fail'); });
-    var home = coin.parentElement.getBoundingClientRect(), zr = zone.getBoundingClientRect(), c0 = coin.getBoundingClientRect();
-    var bx = c0.left - cx, by = c0.top - cy;
-    place(zr.left + zr.width / 2 - c0.width / 2 - bx, zr.top + zr.height / 2 - c0.height / 2 - by, true);
+    var zr = zone.getBoundingClientRect();
+    var op = (coin.offsetParent || coin.parentElement).getBoundingClientRect(), bx = op.left + coin.offsetLeft, by = op.top + coin.offsetTop;
+    /* Land on the zone's right edge, shrunk, so the move's label stays readable. */
+    var cw = coin.offsetWidth, chh = coin.offsetHeight;
+    place(zr.right - 30 - cw / 2 - bx, zr.top + zr.height / 2 - chh / 2 - by, true, 0.56);
     if (r[0] === 'fail') setTimeout(function () { place(0, 0, true); }, reduced ? 0 : 700);
   }
   document.querySelectorAll('[data-try]').forEach(function (b) {
@@ -604,7 +606,7 @@
     covers(acts[2], [['files/the-instrument.pdf', 'img/cover-the-instrument.jpg', 'The Instrument', '279 pages']]);
   })();
 
-  function redrawAll() { drawGhost(); drawCoins(coinsState.t, coinsState.order); drawRace(); drawFair(); drawEmit(); drawMiners(); buildTrack(); }
+  function redrawAll() { drawGhost(); drawCoins(coinsState.t, coinsState.order); drawFair(); drawEmit(); drawMiners(); buildTrack(); }
   document.querySelectorAll('details').forEach(function (d) { d.addEventListener('toggle', function () { if (d.open) redrawAll(); }); });
   redrawAll();
   var rt; addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(redrawAll, 120); });

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Why a web of blocks beats a chain · Kaspa Explained</title>
+<meta name="description" content="Why Kaspa lets blocks point at several parents, and how GHOSTDAG turns that web into one order. With 261 real blocks to explore.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f5f1e8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22%3E%3Ccircle cx=%224%22 cy=%2210%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3Ccircle cx=%2216%22 cy=%224.5%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3Ccircle cx=%2216%22 cy=%2215.5%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3C/svg%3E">
+<link rel="preload" href="../../fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../css/site.css">
+<script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('ke-theme2');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body class="deep-page">
+<header class="bar"><div class="bar-in">
+  <a class="brand" href="../../"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4" cy="10" r="2.6" fill="currentColor"/><circle cx="16" cy="4.5" r="2.6" fill="currentColor"/><circle cx="16" cy="15.5" r="2.6" fill="currentColor"/><path d="M6 9 14 5M6 11l8 4" stroke="currentColor" stroke-width="1.4"/></svg>Kaspa Explained</a>
+  <div class="switch"><button type="button" id="theme" aria-label="Switch day or night colours">Night</button></div>
+</div><div class="progress" id="progress"></div></header>
+<main class="deep" id="main">
+  <a class="back" href="../../#c1" data-back>← Back to “The problem”</a>
+  <p class="kicker">Go deeper · The blockDAG and GHOSTDAG</p>
+  <h1>Why a web of blocks beats a chain</h1>
+  <p class="lede">A chain can only grow one block at a time. Make blocks faster than the internet can carry them and most get thrown away. Kaspa keeps them all, in a web called a <button class="term" type="button" data-pop="BlockDAG: blocks that can each point at several earlier blocks. Blocks found at the same moment all stay in, instead of one long chain that throws the losers away.">blockDAG</button>, and then agrees on one order for everything inside it.</p>
+  <section>
+    <h2>Why it matters to you</h2>
+    <p>Speed and safety usually pull against each other. Bitcoin makes a <button class="term" type="button" data-pop="Block: a batch of recent payments, sealed with proof-of-work and linked to earlier blocks.">block</button> every ten minutes so that almost every <button class="term" type="button" data-pop="Miner: a computer doing proof-of-work to make blocks. It is paid in new coins plus the fees in its block.">miner</button> hears about the last one before making the next. That gap is why a payment takes so long to settle.</p>
+    <p>If blocks that cross in flight can both stay, the gap is no longer needed. Kaspa makes ten a second, and your payment is in one of them within moments. Nothing honest is thrown away, so the work miners do all counts toward security.</p>
+  </section>
+  <section>
+    <h2>How it works: past, future and the blocks in between</h2>
+    <p>Each new block points at every block it has heard of that nothing points at yet. That gives every block three groups. Its <b>past</b> is everything it builds on. Its <b>future</b> is everything built on it later. The rest is its <button class="term" type="button" data-pop="Anticone: the blocks a block could not have seen, because they were made at about the same time somewhere else.">anticone</button>: blocks made at about the same time somewhere else.</p>
+    <p>On a chain the anticone is always empty, and anything in it is thrown away. In Kaspa it is normal and small. Tap a block below to see its three groups.</p>
+    <figure class="inter" data-inter="cone">
+      <canvas id="coneCanvas" height="300" aria-label="Real Kaspa blocks. Tap one to colour its past, future and anticone."></canvas>
+      <div class="inter-row"><label class="scrub" for="coneWin">Earlier <input type="range" id="coneWin" min="0" max="1000" value="500" aria-label="Move the window through the recording"> Later</label></div>
+      <div class="readout" id="coneOut" aria-live="polite">Loading real blocks…</div>
+      <figcaption><b>Real data</b><span id="coneTag">Recorded from api.kaspa.org on 30 Oct 2026.</span> Left to right is time. <span class="sw past"></span>past <span class="sw fut"></span>future <span class="sw anti"></span>anticone</figcaption>
+    </figure>
+  </section>
+  <section id="ghostdag">
+    <h2><span class="kicker">The ordering rule</span>GHOSTDAG: one order from the web</h2>
+    <p>A web isn’t enough on its own. If two payments spend the same coin, every computer has to pick the same winner. GHOSTDAG, the rule Kaspa runs today, gives the web one order in three steps.</p>
+    <ol class="steps-plain">
+      <li><b>Find the main line.</b> Each block picks one parent, the one with the most honest work behind it. Following those picks gives a chain through the web: the chain blocks.</li>
+      <li><b>Colour the rest.</b> Each chain block takes in the blocks it newly sees. A block is blue (honest) if at most <button class="term" type="button" data-pop="k: GHOSTDAG’s safety margin. How many honest blocks a block may have missed and still count as honest itself.">k</button> other blue blocks are in its anticone. A block that hid from the network for too long has a big anticone and is coloured red.</li>
+      <li><b>Read it off.</b> The order is the chain blocks, each followed by the blocks it took in, in a fixed tie-break order. Every node computes the same thing from the same blocks, without voting.</li>
+    </ol>
+    <p>Red blocks aren’t deleted. Their payments still count unless they clash with an earlier one, and then the earlier one wins. Chapter 3 on the main page lets you try to cheat this rule.</p>
+  </section>
+  <section>
+    <h2>What isn’t settled</h2>
+    <p>GHOSTDAG needs a fixed guess of the worst network delay, and sets <button class="term" type="button" data-pop="k: GHOSTDAG’s safety margin. How many honest blocks a block may have missed and still count as honest itself.">k</button> from it. If the internet got much slower than that guess, its safety margin would shrink. <button class="term" type="button" data-pop="DAGKnight: Kaspa’s planned next ordering rule. It measures how fast the internet actually is instead of assuming it. Not on mainnet.">DAGKnight</button>, the planned successor, measures the delay as it goes instead. It isn’t on <button class="term" type="button" data-pop="Mainnet: the real network with real money, as opposed to a test network.">mainnet</button> yet.</p>
+  </section>
+  <section class="sources-sec"><h2>Sources</h2><ul class="sources"><li>Sompolinsky, Wyborski and Zohar, <a href="https://eprint.iacr.org/2018/104">PHANTOM and GHOSTDAG</a> (2018, revised 2021).</li><li>Blocks: <a href="https://api.kaspa.org/docs">api.kaspa.org</a>, recorded 30 Oct 2026, 14:32 CET.</li><li>Sompolinsky and Sutton, <a href="https://eprint.iacr.org/2022/1494">The DAG KNIGHT protocol</a> (2022).</li></ul></section>
+  <nav class="next-deep" aria-label="Next deep dive"><a class="deeper" href="../security/"><span class="k">Next deep dive</span><span class="t">Seconds versus an hour</span><span class="a" aria-hidden="true">→</span></a></nav>
+</main>
+<footer>Independent explainer, not official, not investment advice. <a href="../../">Back to the start</a> · <a href="../../CREDITS.md">Credits</a>.</footer>
+<script src="../../js/deep.js" defer></script>
+</body>
+</html>

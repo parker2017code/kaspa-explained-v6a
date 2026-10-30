@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Apps that prove instead of asking you to trust · Kaspa Explained</title>
+<meta name="description" content="What vProgs are, why proving beats re-running, and how far along they are.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f5f1e8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22%3E%3Ccircle cx=%224%22 cy=%2210%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3Ccircle cx=%2216%22 cy=%224.5%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3Ccircle cx=%2216%22 cy=%2215.5%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3C/svg%3E">
+<link rel="preload" href="../../fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../css/site.css">
+<script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('ke-theme2');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body class="deep-page">
+<header class="bar"><div class="bar-in">
+  <a class="brand" href="../../"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4" cy="10" r="2.6" fill="currentColor"/><circle cx="16" cy="4.5" r="2.6" fill="currentColor"/><circle cx="16" cy="15.5" r="2.6" fill="currentColor"/><path d="M6 9 14 5M6 11l8 4" stroke="currentColor" stroke-width="1.4"/></svg>Kaspa Explained</a>
+  <div class="switch"><button type="button" id="theme" aria-label="Switch day or night colours">Night</button></div>
+</div><div class="progress" id="progress"></div></header>
+<main class="deep" id="main">
+  <a class="back" href="../../#c6" data-back>← Back to “Coins with rules”</a>
+  <p class="kicker">Go deeper · vProgs</p>
+  <h1>Apps that prove instead of asking you to trust</h1>
+  <p class="lede"><button class="term" type="button" data-pop="vProgs (verifiable programs): apps that run off the main network and post a ZK proof of their work to Kaspa. A prototype today.">vProgs</button> are Kaspa’s plan for shared apps, like an exchange, that run off the network and send it a proof that they did their job right. Every node checks the proof in milliseconds. They exist as a prototype, not on the live network.</p>
+  <section>
+    <h2>Why it matters to you</h2>
+    <p>Today, using an app on a blockchain means trusting that its code does what it says, or waiting while every node re-runs it. A proof removes both. The app can’t cheat you without the proof failing, and the network stays fast because checking is cheap.</p>
+  </section>
+  <section>
+    <h2>How it works: heavy to make, light to check</h2>
+    <p>The app does its work and produces a <button class="term" type="button" data-pop="Zero-knowledge proof (ZK): a short piece of maths that proves a computation was done right, so nobody has to run it again to check.">zero-knowledge proof</button>: a few hundred bytes of maths. Making the proof takes a lot of computing. Checking it takes about the same tiny effort however big the work was.</p>
+    <figure class="inter" data-inter="vprog">
+      <div class="inter-row"><label for="vpN">How much work the app did <output id="vpNVal">1,000 steps</output></label><input type="range" id="vpN" min="0" max="6" value="3" step="0.01"></div>
+      <canvas id="vpCanvas" height="200" aria-label="Effort to re-run, to prove and to check, as the work grows"></canvas>
+      <div class="readout" id="vpOut" aria-live="polite"></div>
+      <figcaption><b>Shape only</b>Not a benchmark: the bars show how each effort grows, not real timings. Re-running grows with the work, proving grows a bit faster, checking stays flat.</figcaption>
+    </figure>
+  </section>
+  <section>
+    <h2>Where Kaspa is today</h2>
+    <p>The <button class="term" type="button" data-pop="Toccata: the network upgrade of 30 June 2026 that switched covenants on.">Toccata</button> upgrade of 30 June 2026 added the pieces underneath. KIP-16 lets a <button class="term" type="button" data-pop="Covenant: a rule attached to a coin that says how it may be spent. Every miner checks it, the same way it checks a signature.">script</button> check a proof. KIP-21 lets an app prove its own lane of transactions. vProgs build on those to let many users change one shared app at once, which covenants alone can’t do.</p>
+  </section>
+  <section>
+    <h2>What isn’t settled</h2>
+    <p>Everything about timing. There is no date for vProgs on <button class="term" type="button" data-pop="Mainnet: the real network with real money, as opposed to a test network.">mainnet</button>, and the design may still change.</p>
+  </section>
+  <section class="sources-sec"><h2>Sources</h2><ul class="sources"><li>Status: the Kaspa core developers’ roundups, checked 29 Oct 2026.</li><li>Overview: <a href="https://vprogs.xyz">vprogs.xyz</a>.</li><li>KIPs: <a href="https://github.com/kaspanet/kips">github.com/kaspanet/kips</a>.</li></ul></section>
+  <nav class="next-deep" aria-label="Next deep dive"><a class="deeper" href="../zk/"><span class="k">Next deep dive</span><span class="t">Zero-knowledge proofs, with a cave and a door</span><span class="a" aria-hidden="true">→</span></a></nav>
+</main>
+<footer>Independent explainer, not official, not investment advice. <a href="../../">Back to the start</a> · <a href="../../CREDITS.md">Credits</a>.</footer>
+<script src="../../js/deep.js" defer></script>
+</body>
+</html>

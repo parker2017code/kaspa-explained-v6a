@@ -413,10 +413,38 @@
         rateInput.value = Math.round(T_KASPA * 1000);
         onSliderChange();
 
-        if (reducedMotion) {
+        // Step mode. The first press pauses the stream and adds one block; each
+        // later press adds one more, so you can watch exactly where it lands.
+        // Play resumes the stream. Reduced motion starts paused.
+        let paused = reducedMotion;
+        const playBtn = document.createElement('button');
+        playBtn.type = 'button'; playBtn.className = 'btn'; playBtn.id = prefix + 'play';
+        stepBtn.insertAdjacentElement('afterend', playBtn);
+        const stepNote = document.getElementById(prefix + 'stepNote');
+        function paintStep() {
           stepBtn.hidden = false;
-          stepBtn.addEventListener('click', function () { generateEvent(); render(); });
+          stepBtn.textContent = paused ? 'Add one block' : 'Pause and step one block';
+          playBtn.textContent = paused ? 'Play' : 'Pause';
+          playBtn.setAttribute('aria-pressed', String(paused));
+          if (stepNote) stepNote.textContent = paused
+            ? 'Paused. Each press adds one block. Watch whether it lands on the chain or gets thrown away.'
+            : 'Pauses the stream so you can add one block at a time and watch where it lands.';
         }
+        function setPaused(p) {
+          paused = p;
+          if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+          if (!paused && !reducedMotion) scheduleNext();
+          paintStep();
+        }
+        stepBtn.addEventListener('click', function () {
+          if (!paused) setPaused(true);
+          generateEvent(); requestRender(); render();
+        });
+        playBtn.addEventListener('click', function () { setPaused(!paused); });
+        rateInput.addEventListener('input', function () { if (paused && autoTimer) { clearTimeout(autoTimer); autoTimer = null; } });
+        delayInput.addEventListener('input', function () { if (paused && autoTimer) { clearTimeout(autoTimer); autoTimer = null; } });
+        if (reducedMotion) playBtn.hidden = true;
+        paintStep();
       }
 
 document.querySelectorAll('[data-collision-sim]').forEach(function (el) {

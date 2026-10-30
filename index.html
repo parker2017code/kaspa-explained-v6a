@@ -3,26 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Kaspa Explained: proof-of-work in real time</title>
-<meta name="description" content="Watch the real Kaspa network mine ten blocks a second, put them in one order, and shrug off an attack you run yourself.">
+<title>Kaspa Explained: money that settles in seconds</title>
+<meta name="description" content="What Kaspa is, why it matters, and how it works, explained with the live network: ten blocks a second, one agreed order, and an attack you run yourself.">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#0b0a09">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22%3E%3Ccircle cx=%224%22 cy=%2210%22 r=%223%22 fill=%22%236fc7ba%22/%3E%3Ccircle cx=%2216%22 cy=%224.5%22 r=%223%22 fill=%22%236fc7ba%22/%3E%3Ccircle cx=%2216%22 cy=%2215.5%22 r=%223%22 fill=%22%236fc7ba%22/%3E%3C/svg%3E">
-<link rel="preload" href="fonts/mona-sans-var.woff2" as="font" type="font/woff2" crossorigin>
+<meta name="theme-color" content="#f5f1e8" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#f5f1e8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22%3E%3Ccircle cx=%224%22 cy=%2210%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3Ccircle cx=%2216%22 cy=%224.5%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3Ccircle cx=%2216%22 cy=%2215.5%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/site.css">
-<script>try{var t=localStorage.getItem('ke-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<script>try{var t=localStorage.getItem('ke-theme2');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 </head>
 <body>
-<a class="skip" href="#c1">Skip to the first chapter</a>
+<a class="skip" href="#why">Skip to the first chapter</a>
 <header class="bar">
   <div class="bar-in">
     <a class="brand" href="#top"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4" cy="10" r="2.6" fill="currentColor"/><circle cx="16" cy="4.5" r="2.6" fill="currentColor"/><circle cx="16" cy="15.5" r="2.6" fill="currentColor"/><path d="M6 9 14 5M6 11l8 4" stroke="currentColor" stroke-width="1.4"/></svg>Kaspa Explained</a>
     <nav class="dots" aria-label="Chapters" id="dots"></nav>
     <div class="switch">
-      <button type="button" id="sound" aria-pressed="false" title="A soft tick for every real block">Sound</button>
-      <button type="button" id="nerd" aria-pressed="false" title="Open every note and show the maths">Nerd mode</button>
-      <button type="button" id="theme" aria-label="Switch light or dark">Light</button>
+      <button type="button" id="sound" aria-pressed="false" title="A soft tick for every real block">Sound<span class="st" aria-hidden="true">off</span></button>
+      <button type="button" id="nerd" aria-pressed="false" title="Open every note and show the maths">Maths<span class="st" aria-hidden="true">off</span></button>
+      <button type="button" id="theme" aria-label="Switch day or night colours">Night</button>
     </div>
+    <label class="chapnav"><span class="sr-only">Jump to a chapter</span><select id="chapSel"></select></label>
   </div>
   <div class="progress" id="progress"></div>
 </header>
@@ -30,31 +31,64 @@
 <main id="top">
 <section class="hero" aria-labelledby="h-hero">
   <canvas id="liveDag" role="img" aria-label="The live Kaspa blockDAG: real blocks from the last half minute, each linked to the blocks it saw."></canvas>
-  <p class="coldopen" id="coldOpen" aria-hidden="true">These are real Kaspa blocks, arriving now.</p>
   <div class="hud" id="hud" aria-live="off">
-    <div><b class="num" id="hudRate">…</b><span>blocks a second, measured</span></div>
-    <div><b class="num" id="hudPar">…</b><span>parents per block</span></div>
-    <div><b class="num" id="hudSeen">…</b><span>blocks since you arrived</span></div>
+    <div><b class="num" id="hudRate">…</b><span>new blocks a second, live</span></div>
+    <div><b class="num" id="hudPar">…</b><span>earlier blocks each one links to</span></div>
+    <div><b class="num" id="hudSeen">…</b><span>blocks since you opened this page</span></div>
   </div>
   <div class="hero-in">
     <h1 id="h-hero">Proof-of-work,<br>in real time.</h1>
-    <p class="lead">Every square is a real Kaspa block, mined somewhere on Earth seconds ago.</p>
+    <p class="lead">Kaspa is digital money that nobody runs, secured the way Bitcoin is, and final in seconds. Every square behind this text is a real Kaspa <button class="term" type="button" data-pop="Block: a batch of recent payments, sealed with proof-of-work and linked to earlier blocks.">block</button>, mined somewhere on Earth moments ago.</p>
     <p class="scale" id="btcScale" aria-live="off">Bitcoin makes one block every ten minutes.</p>
     <p class="scale-note" id="btcScaleNote"></p>
     <div class="cta">
-      <a class="btn primary" href="#c1">See how it works</a>
-      <a class="textlink" href="#c3">or go straight to the attack</a>
+      <a class="btn primary" href="#why">Why it matters</a>
+      <a class="textlink" href="#c3">or try to cheat it</a>
     </div>
     <p class="source" id="liveSource">Connecting to the Kaspa network…</p>
   </div>
 </section>
 
-<section class="chapter c1" id="c1" data-title="The problem" aria-labelledby="h1c">
+
+<section class="chapter numbered why" id="why" data-title="Why care" aria-labelledby="hwhy">
+  <h2 id="hwhy">Money that settles in seconds, with nobody in charge.</h2>
+  <p class="big">Like Bitcoin, Kaspa has no company behind it and anyone can check its rules. Unlike Bitcoin, your payment is final in about the time it takes to read this sentence, not an hour.</p>
+  <div class="why-grid">
+    <div><span class="n num">1–3 s</span><h3>Fast enough to pay with</h3><p>A payment shows up in under a second and is settled in 1 to 3. Bitcoin’s usual rule for big amounts is about an hour.</p></div>
+    <div><span class="n num">0%</span><h3>No one got coins for free</h3><p>No presale, no founders’ share. Every coin was paid to a <button class="term" type="button" data-pop="Miner: a computer doing proof-of-work to make blocks. It is paid in new coins plus the fees in its block.">miner</button>, on the same terms as everyone else.</p></div>
+    <div><span class="n num" id="whyMined">96.8%</span><h3>Supply is fixed, and mostly out</h3><p>About 28.7 billion <button class="term" type="button" data-pop="KAS: Kaspa’s coin, the unit you hold and send. 1 KAS = 100,000,000 sompi.">KAS</button> will ever exist. <span id="whyMinedNote">On 30 Oct 2026, 96.8% already did.</span> No one can print more.</p></div>
+  </div>
+  <h3>What you can do with it today</h3>
+  <ol class="dothis">
+    <li><b>Hold and send it.</b>Get a <button class="term" type="button" data-pop="Wallet: an app that holds your keys and lets you send and receive. Whoever has the seed words has the coins.">wallet</button>, buy KAS on an exchange, send it to anyone. It lands in about a second and the <button class="term" type="button" data-pop="Fee: what you pay the miner to include your payment. On Kaspa usually a tiny fraction of a cent.">fee</button> is usually far below a cent.</li>
+    <li><b>Take payments.</b>A shop sees your payment in seconds, not minutes, without a card company in the middle.</li>
+    <li><b>Lock coins with rules.</b>Since June 2026 a coin can carry its own rules, like a vault that only pays out to your savings wallet (chapter 8).</li>
+    <li class="later"><b>Run shared apps <span class="tag">not yet</span></b>Apps that many people use at once, checked by maths instead of trust. Built, not live: a prototype.</li>
+  </ol>
+  <figure class="fit-table scroll" tabindex="0" role="region" aria-label="Comparison table: Bitcoin, Ethereum, Solana, stablecoins and Kaspa. Scrolls sideways on small screens.">
+    <table>
+      <caption>Where Kaspa fits among the coins you’ve heard of.</caption>
+      <thead><tr><th scope="col">Coin</th><th scope="col">Who keeps it honest</th><th scope="col">New block</th><th scope="col">Hard to undo after</th><th scope="col">Supply</th><th scope="col">Mostly used for</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Bitcoin</th><td>Miners, by <button class="term" type="button" data-pop="Proof-of-work: computers race to solve a costly puzzle. The winner adds the next block and is paid in new coins. To cheat you would have to out-spend everyone else on machines and electricity.">proof-of-work</button></td><td>every ~10 min</td><td>~1 hour (6 blocks)</td><td>21 million, fixed</td><td>Saving, big transfers</td></tr>
+        <tr><th scope="row">Ethereum</th><td>Holders, by <button class="term" type="button" data-pop="Proof-of-stake: holders lock up coins as a deposit and take turns adding blocks, instead of mining.">proof-of-stake</button></td><td>every 12 s</td><td>~13 min</td><td>No cap</td><td>Apps and tokens</td></tr>
+        <tr><th scope="row">Solana</th><td>Holders, by proof-of-stake</td><td>every ~0.4 s</td><td>~13 s</td><td>No cap</td><td>Fast apps, trading</td></tr>
+        <tr><th scope="row"><button class="term" type="button" data-pop="Stablecoin: a token a company backs with dollars it holds, so it stays worth $1. The company can freeze it.">Stablecoins</button></th><td>The company that issues it</td><td colspan="2">Whatever chain it runs on</td><td>As many dollars as it holds</td><td>Dollar payments</td></tr>
+        <tr class="kas"><th scope="row">Kaspa</th><td>Miners, by proof-of-work</td><td>every 0.1 s</td><td>1 to 3 s</td><td>~28.7 billion, fixed</td><td>Payments; coins with rules</td></tr>
+      </tbody>
+    </table>
+    <figcaption class="src">Block times and finality from ethereum.org, solana.com and the Bitcoin white paper; Kaspa’s 1 to 3 s from Yonatan Sompolinsky (chapter 5). Checked 30 Oct 2026.</figcaption>
+  </figure>
+  <p class="takeaway">Kaspa’s bet in one line: <b>Bitcoin’s kind of security, at the speed of a card payment.</b> The next chapters show how, with the live network, and let you try to break it.</p>
+  <a class="deeper" href="learn/price/"><span class="k">Go deeper</span><span class="t">Price, size and risk: is it an investment?</span><span class="a" aria-hidden="true">→</span></a>
+</section>
+
+<section class="chapter numbered c1" id="c1" data-title="The problem" aria-labelledby="h1c">
   <div class="c1-grid" id="collision-demo" data-collision-sim="cs-">
     <div class="c1-head">
-      <h2 id="h1c">Fast blocks collide.</h2>
-      <p class="big">A new block needs a fraction of a second to reach every miner. Two blocks found in that window can’t both sit on one chain. One gets thrown away, and the work behind it is wasted.</p>
-      <p>Bitcoin avoids collisions by making blocks rare. Kaspa keeps both.</p>
+      <h2 id="h1c">Why ten blocks a second is hard.</h2>
+      <p class="big">Speed needs blocks often. But a new block takes a fraction of a second to reach every miner, and two found in that window collide. On a single chain one is thrown away, with the work behind it.</p>
+      <p>Bitcoin avoids collisions by making blocks rare: one every ten minutes. Kaspa keeps both blocks, in a <button class="term" type="button" data-pop="BlockDAG: blocks that can each point at several earlier blocks. Blocks found at the same moment all stay in, instead of one long chain that throws the losers away.">blockDAG</button>.</p>
       <p class="result-line"><span id="cs-resultLine"></span>
         <span class="info-affordance"><button type="button" class="info-affordance__trigger" data-pop="Modelled with a network delay of 250 ms. A walk through 1,399 consecutive Kaspa blocks on 24 Aug 2026 put the real figure between about 204 and 666 ms. The share drifts toward the model as more blocks arrive."><i class="info-affordance__glyph" aria-hidden="true">i</i><span class="sr-only">What this number assumes</span></button></span></p>
     </div>
@@ -82,27 +116,36 @@
         <div class="legend"><span><i class="blk" style="background:var(--green)"></i>every block kept, pointing at every block it saw</span></div>
       </div>
       <p class="sr-only" id="cs-graphSummary"></p>
-      <button hidden id="cs-step" class="btn" type="button">Step one block</button>
+      <div class="controls"><button id="cs-step" class="btn" type="button">Pause and step one block</button></div>
+      <p class="step-note" id="cs-stepNote">Pauses the stream so you can add one block at a time and watch where it lands. Press Play to stream again.</p>
     </div>
   </div>
   <details class="more nerd"><summary>The collision maths</summary><div class="in">
     <p>Blocks arrive at random, like raindrops: a Poisson process with rate λ. Two collide when the next one is found before the first has spread, which takes delay d. The share a chain discards grows with λ × d. At Kaspa’s ten a second and a 250 ms delay, λd = 2.5 and a chain would discard about 72% of blocks. Checked against the PHANTOM/GHOSTDAG paper, <a href="https://eprint.iacr.org/2018/104">eprint.iacr.org/2018/104</a>.</p>
-    <p>Nerd mode also shows the network-delay slider in the toy above.</p>
+    <p>“Maths” mode also shows the network-delay slider in the toy above.</p>
   </div></details>
+  <p class="takeaway">For you: on one chain, fast blocks waste work and that weakens security. <b>Kaspa keeps every block,</b> so it can be fast without giving security up.</p>
+  <a class="deeper" href="learn/dag/"><span class="k">Go deeper</span><span class="t">Why a web of blocks beats a chain</span><span class="a" aria-hidden="true">→</span></a>
 </section>
 
-<section class="chapter show" id="c2" data-title="One order" aria-labelledby="h2c">
+<section class="chapter numbered show" id="c2" data-title="One order" aria-labelledby="h2c">
   <h2 id="h2c">Keep every block.<br>Agree on one order.</h2>
   <p class="big">Each Kaspa block points at every recent block its miner could see. The rule called <button class="term" type="button" data-pop="GHOSTDAG: the rule Kaspa runs today to turn the web of blocks into one agreed order. From research by Yonatan Sompolinsky and Aviv Zohar.">GHOSTDAG</button> then reads that web the same way on every node and lines all of it up.</p>
+  <ol class="steps" id="orderSteps">
+    <li id="os1" class="on">Watch. The blocks line up by themselves, then start again.</li>
+    <li id="os2">Drag “Scrub” to move between the web and the line.</li>
+    <li id="os3">Tap any block to see which blocks it points at.</li>
+  </ol>
   <div class="stage" id="order">
+    <p class="sample-tag" id="orderTag" aria-live="polite"></p>
     <canvas id="orderCanvas" role="img" aria-label="Real Kaspa blocks from the last ten seconds, first as a web, then in their agreed order." aria-describedby="orderOut"></canvas>
     <p class="inspect" id="orderInspect" aria-live="polite">Point at a block, or tap one, to see which blocks it points at.</p>
     <div class="controls">
-      <button class="btn primary" type="button" id="oGo" disabled>Waiting for real blocks…</button>
-      <button class="btn" type="button" id="oAgain" hidden>Take a fresh ten seconds</button>
-      <label class="scrub" for="oScrub">Scrub <input type="range" id="oScrub" min="0" max="1000" value="0" disabled aria-label="Scrub the line-up from web to queue"></label>
+      <button class="btn primary" type="button" id="oGo">Pause</button>
+      <button class="btn" type="button" id="oAgain">Take a fresh ten seconds</button>
+      <label class="scrub" for="oScrub">Scrub: web <input type="range" id="oScrub" min="0" max="1000" value="0" aria-label="Scrub the line-up from web to queue"> line</label>
     </div>
-    <p class="out" id="orderOut">This uses the last ten seconds of the real network, not a simulation.</p>
+    <p class="out" id="orderOut">Real blocks, not a simulation.</p>
   </div>
   <details class="more nerd"><summary>How the order is built</summary><div class="in">
     <p>Each block names one <i>selected parent</i>, the parent with the most blue work behind it. Following those links gives a spine through the web, the selected chain (brighter squares). Each chain block merges the blocks it saw that its selected parent had not: its mergeset. The order is: everything before, then the mergeset sorted by accumulated work, then the chain block itself.</p>
@@ -112,28 +155,32 @@
   <div class="coins-row" id="coinsMore">
     <div>
       <h3>Payments in parallel blocks don’t queue.</h3>
+      <p class="legend"><span><i class="blk" style="background:var(--green)"></i>separate coins (Kaspa)</span><span><i class="blk" style="background:var(--orange)"></i>one balance per account</span></p>
       <p>Kaspa tracks money as separate coins, the way Bitcoin does, rather than one balance per account. Payments that land in parallel blocks don’t have to wait for each other.</p>
       <div class="controls"><button class="btn primary" type="button" id="coinsGo">Send five at once</button></div>
       <p class="out" id="coinsOut" aria-live="polite"></p>
     </div>
     <canvas id="coinsCanvas" height="170" role="img" aria-label="Five payments: as separate coins they go together; as one balance they queue."></canvas>
   </div>
+  <p class="takeaway">For you: every node lines up the same blocks the same way, so <b>everyone agrees on who paid whom, ten times a second.</b></p>
+  <a class="deeper" href="learn/dag/#ghostdag"><span class="k">Go deeper</span><span class="t">GHOSTDAG, one block at a time</span><span class="a" aria-hidden="true">→</span></a>
 </section>
 
-<section class="chapter show" id="c3" data-title="Attack it" aria-labelledby="h3c">
+<section class="chapter numbered show" id="c3" data-title="Attack it" aria-labelledby="h3c">
   <div class="c3-head">
     <h2 id="h3c">Try to cheat.</h2>
-    <p class="big">You control a slice of the mining power. Mine blocks in secret, then release them and try to rewrite the order. The honest network keeps going without you.</p>
+    <p class="big">The one attack that matters: rewrite history to spend the same coins twice. You get a slice of all mining power. Mine in secret, release, and try to jump the queue.</p>
   </div>
   <div class="stage ghost" id="ghost">
     <div class="board" aria-hidden="true">
       <div><span>Honest network</span><b class="num" id="gHonest">0</b></div>
       <div class="you"><span>Your hidden blocks</span><b class="num" id="gYou">0</b></div>
       <p class="verdict" id="gVerdict"></p>
+      <p class="legend"><span><i class="blk" style="background:var(--cyan)"></i>honest blocks</span><span><i class="blk hollow" style="border-color:var(--orange)"></i>your hidden blocks</span><span><i class="blk" style="background:var(--red)"></i>judged red: ordered last</span></p>
     </div>
     <canvas id="ghostCanvas" height="300" role="img" aria-label="A blockDAG growing. Blue blocks are honest; your hidden blocks are dashed until released, then judged." aria-describedby="gOut"></canvas>
     <div class="controls">
-      <label>Your share of mining <input type="range" id="qAtk" min="5" max="45" value="30"> <span class="num" id="qAtkVal">30%</span></label>
+      <label>Your share of all mining <input type="range" id="qAtk" min="5" max="45" value="30"> <span class="num" id="qAtkVal">30%</span></label>
       <ol class="seq">
         <li><button class="btn primary" type="button" id="gHide">Start mining in secret</button></li>
         <li><button class="btn" type="button" id="gRelease" disabled>Release</button></li>
@@ -143,55 +190,54 @@
     <p class="out" id="gOut"></p>
     <p class="order-strip num" id="gOrder" aria-label="The order every node agrees on"></p>
   </div>
-  <p class="note">A teaching model with k = 3 and two honest blocks per round. The real network uses a k set from its block rate.</p>
+  <p class="note">The slider stops at 45%: past half of all mining, any proof-of-work coin can be rewritten, Bitcoin included. A teaching model with <button class="term" type="button" data-pop="k: GHOSTDAG’s safety margin. How many honest blocks a block may have missed and still count as honest itself.">k</button> = 3; the real network sets k from its block rate.</p>
+  <p class="takeaway">For you: once your payment is in, someone with less than half the mining power <b>can’t move it, however they time their blocks.</b></p>
+  <a class="deeper" href="learn/security/"><span class="k">Go deeper</span><span class="t">How safe is “settled in seconds”?</span><span class="a" aria-hidden="true">→</span></a>
   <details class="more nerd"><summary>Why the hidden blocks turn red</summary><div class="in">
     <p>While you hid, the honest network kept making blocks your branch never saw. That gap is your blocks’ anticone. A block stays blue only if at most k blue blocks sit in its anticone. Honest blocks, published at once, have small anticones. Yours has a huge one, so it’s coloured red and ordered after the honest ones. Red blocks still count; they just can’t jump the queue.</p>
   </div></details>
 </section>
 
-<section class="chapter show" id="c4" data-title="The race" aria-labelledby="h4c">
+<section class="chapter numbered show" id="c4" data-title="The race" aria-labelledby="h4c">
   <h2 id="h4c">Same payment.<br>Two networks.</h2>
-  <p class="big">Press pay. Every square on the left is a real Kaspa block mined after you pressed. The six slots on the right fill only when real Bitcoin blocks arrive.</p>
+  <p class="big">Press pay. Kaspa settles in about 3 seconds; Bitcoin needs about an hour. Every square on the left is a real Kaspa block mined after you pressed. The six slots on the right fill only as real Bitcoin blocks arrive.</p>
   <div class="stage duel" id="duel">
     <div class="side" id="dK">
       <p class="side-name">Kaspa</p>
-      <p class="clock num" id="dKclock">0.0 s</p>
+      <p class="clock num" id="dKclock">0.0 s</p><p class="fast-tag num" aria-hidden="true">&nbsp;</p>
       <div class="meter"><div class="meter-fill" id="dKfill"></div></div>
       <p class="side-out" id="dKout">Ready.</p>
       <div class="pile" id="dKpile" aria-hidden="true"></div>
     </div>
     <div class="side" id="dB">
       <p class="side-name">Bitcoin</p>
-      <p class="clock num" id="dBclock">0:00</p>
+      <p class="clock num" id="dBclock">0:00</p><p class="fast-tag num" id="dBfastTag" aria-hidden="true">&nbsp;</p>
       <div class="meter"><div class="meter-fill btc" id="dBfill"></div></div>
       <p class="side-out" id="dBout">Ready.</p>
       <div class="slots" id="dBslots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     </div>
+    <details class="more ruler"><summary>See both clocks on one ruler</summary><div class="in">
     <figure class="track" id="track">
       <svg id="trackSvg" role="img" aria-labelledby="trackCap"></svg>
       <figcaption id="trackCap">Both clocks on one ruler. Each step to the right is ten times longer. The shaded band and the dashed line are the published settle times; the markers move with your payment.</figcaption>
     </figure>
+    </div></details>
     <div class="controls"><button class="btn primary" type="button" id="dGo">Pay both</button><button class="btn" type="button" id="dFast" hidden>Fast-forward Bitcoin ×600</button></div>
     <p class="note" id="dNote">Kaspa side: “settled” uses Yonatan Sompolinsky’s figure of 1 to 3 seconds for the guarantee Bitcoin gives after about an hour. Bitcoin side: six confirmations, the usual rule for large amounts.</p>
   </div>
-  <details class="more nerd"><summary>The numbers behind “seconds”</summary><div class="in">
+  <details class="more nerd"><summary>Where “1 to 3 seconds” comes from</summary><div class="in">
     <p>For Kaspa, Sompolinsky gives figures on X (26 Feb 2026). At 10 blocks a second, a 37% attacker can fake the majority signal within a second with probability 12%. At 100 blocks a second that drops to 0.3%. He also writes that Bitcoin reaches censorship resistance in about an hour and Kaspa reaches the same level in 1 to 3 seconds. <a href="https://x.com/hashdag/status/2026991442506256843">Post</a>, <a href="https://x.com/hashdag/status/2023541070001246546">post</a>. That’s why core wants more blocks per second, not for throughput. “Scalability is boring,” in his words.</p>
-    <div class="toy" id="race">
-      <p class="try">Satoshi’s formula, for Bitcoin.</p>
-      <div class="controls"><label>Attacker’s share <input type="range" id="qIn" min="5" max="45" value="10"> <span class="num" id="qVal">10%</span></label></div>
-      <canvas id="raceCanvas" height="220" role="img" aria-label="Chance an attacker can reverse a Bitcoin payment, by minutes waited."></canvas>
-      <p class="out" id="raceOut"></p>
-      <p class="note">Section 11 of the Bitcoin white paper, one block per ten minutes. Exact for Bitcoin’s model; it doesn’t apply to a DAG as is.</p>
-    </div>
   </div></details>
   <details class="more nerd"><summary>When the internet breaks</summary><div class="in">
-    <p>GHOSTDAG fixes its safety margin k in advance, from an assumed worst-case delay. If the real network is much slower, a fixed margin can be too tight. DAGKnight, Kaspa’s planned next consensus, measures the network as it goes: fast when the internet is calm, slower but still safe when it splits. Core developers merged more DAGKnight code toward testnet in September 2026; it isn’t on mainnet.</p>
+    <p>GHOSTDAG fixes its safety margin k in advance, from an assumed worst-case delay. If the real network is much slower, a fixed margin can be too tight. <button class="term" type="button" data-pop="DAGKnight: Kaspa’s planned next ordering rule. It measures how fast the internet actually is instead of assuming it. Not on mainnet.">DAGKnight</button>, Kaspa’s planned next consensus, measures the network as it goes: fast when the internet is calm, slower but still safe when it splits. Core developers merged more DAGKnight code toward testnet in September 2026; it isn’t on mainnet.</p>
   </div></details>
+  <p class="takeaway">For you: a payment you can <b>treat as final before you’ve put your phone away.</b> The rest of the page is about keeping it that way.</p>
+  <a class="deeper" href="learn/security/"><span class="k">Go deeper</span><span class="t">Seconds versus an hour, in numbers you can move</span><span class="a" aria-hidden="true">→</span></a>
 </section>
 
-<section class="chapter c5" id="c5" data-title="Fair launch" aria-labelledby="h5c">
+<section class="chapter numbered c5" id="c5" data-title="Supply" aria-labelledby="h5c">
   <h2 id="h5c">No premine. No sale.<br>No insiders.</h2>
-  <p class="big">On 23 November 2021 Kaspa started with an empty ledger. Every coin since was paid to whoever mined a block, on the same terms for everyone.</p>
+  <p class="big">On 7 November 2021 Kaspa started with an empty ledger. Every coin since was paid to whoever mined a block, on the same terms for everyone.</p>
   <p>The company that funded early research, DAGLabs, mined an estimated 2.5 to 3% of supply in the first months, in the open, like any other miner.</p>
   <figure class="fair" id="fair">
     <figcaption>Out of every 100 coins that existed at launch, how many went to founders, companies or foundations. Published figures.</figcaption>
@@ -200,8 +246,15 @@
   <details class="more"><summary>Where these numbers come from</summary><div class="in">
     <p>Kaspa: the node’s genesis file ships an empty coin set. Ethereum: about 12M of the ~72M genesis ETH (16.7%) went to founders, early contributors and the Ethereum Foundation; the rest was sold in the 2014 crowdsale. Cardano: IOHK, Emurgo and the Cardano Foundation held 11.52% of the 45B maximum. XRP: all 100B were created for Ripple and its founders.</p>
   </div></details>
-  <h3>No halving cliffs</h3>
-  <p>The block reward halves every year in twelve monthly steps of about 5.6%. Supply never passes about 28.7 billion KAS.</p>
+  <h3>Most of it is already out</h3>
+  <figure class="mined" id="mined">
+    <p class="big-n num" id="minedPct">96.8%</p>
+    <div class="bar-track" role="img" id="minedBar" aria-label="Share of all Kaspa that will ever exist that has already been mined."><div class="bar-fill" id="minedFill" style="width:96.8%"></div></div>
+    <div class="bar-legend"><span id="minedNow">27.78 billion KAS mined</span><span id="minedMax">of about 28.70 billion, ever</span></div>
+    <p class="src" id="minedSrc">Recorded 30 Oct 2026, 14:42 CET from api.kaspa.org/info/coinsupply. Updating…</p>
+  </figure>
+  <h3>No <button class="term" type="button" data-pop="Halving: the moment the reward for a block drops to half. Bitcoin does it in one jump every four years.">halving</button> cliffs</h3>
+  <p>What’s left trickles out slowly. The reward halves every year in twelve monthly steps of about 5.6%, instead of Bitcoin’s sudden halvings. The last coins come out around 2057.</p>
   <figure class="emit" id="emit">
     <div class="controls"><label>Year <input type="range" id="yIn" min="2026.83" max="2040" step="0.0833" value="2026.83"> <span class="num" id="yVal"></span></label></div>
     <div class="plot" id="emitPlot" role="img" aria-label="Kaspa’s new coins per second over time, falling in small monthly steps."></div>
@@ -219,12 +272,45 @@
     <p class="out" id="minersOut"></p>
     <p class="note" id="minersGap"></p>
   </figure>
+  <p class="takeaway">For you: <b>no one can dilute your coins,</b> and the open question is the one on the chart. Will fees grow enough to pay miners once new coins run low?</p>
+  <a class="deeper" href="learn/supply/"><span class="k">Go deeper</span><span class="t">Supply, month by month to 2057</span><span class="a" aria-hidden="true">→</span></a>
+  <a class="deeper" href="learn/fees/"><span class="k">Go deeper</span><span class="t">Fees, miners and who pays for security</span><span class="a" aria-hidden="true">→</span></a>
 </section>
 
-<section class="chapter c6" id="c6" data-title="Coins with rules" aria-labelledby="h6c">
+<section class="chapter numbered money" id="money" data-title="Price and risk" aria-labelledby="hmoney">
+  <h2 id="hmoney">What it’s worth, and what could go wrong.</h2>
+  <p class="big">Kaspa trades on exchanges like any coin. Here’s its price and size today, next to things you know, and the plain risks. None of this is advice.</p>
+  <div class="market" id="market">
+    <div class="quote">
+      <div><span>Price</span><b id="mPrice">$0.0327</b><small id="mChg">−9.4% in 24 h</small></div>
+      <div><span><button class="term" type="button" data-pop="Market cap: price × coins in circulation. A rough size, not money anyone could cash out at once.">Market cap</button></span><b id="mCap">$907M</b><small>price × coins out</small></div>
+      <div><span>Rank</span><b id="mRank">#76</b><small>among all coins</small></div>
+      <div><span>From its peak</span><b id="mAth">−84%</b><small id="mAthWhen">high $0.207, 31 Jul 2024</small></div>
+    </div>
+    <figure id="sizeFig">
+      <svg id="sizeSvg" role="img" aria-labelledby="sizeCap"></svg>
+      <figcaption id="sizeCap">Sizes on one ruler. Each step right is ten times bigger. Kaspa is about 1/1,700 of Bitcoin and about 1/30,000 of all the gold above ground.</figcaption>
+    </figure>
+    <p class="src" id="mSrc">Recorded 30 Oct 2026, 14:39 CET from the CoinGecko API. Updating…</p>
+  </div>
+  <h3>Is it an investment?</h3>
+  <p>It’s a bet on use. There’s no company, no earnings and no dividend. The price moves only with what people will pay for the coin, which depends on whether Kaspa gets used.</p>
+  <ul class="risks">
+    <li><b>It swings hard.</b> <span id="rSwing">KAS is 84% below its July 2024 high, and fell 9% in the last day.</span></li>
+    <li><b>It can go to zero.</b> Most coins ever launched are now worth close to nothing.</li>
+    <li><b>Fees must take over.</b> Security is paid by new coins today. If fees don’t grow, miners leave and security drops (chapter 6).</li>
+    <li><b>Competition.</b> Ethereum, Solana and others are larger and already host most apps.</li>
+    <li><b>Your keys, your problem.</b> Lose the seed words and the coins are gone. Exchanges can fail or freeze withdrawals.</li>
+    <li><b>Rules can change.</b> Taxes and exchange rules for crypto differ by country and still shift.</li>
+  </ul>
+  <p class="note">This page explains; it doesn’t recommend. Only put in what you could lose entirely.</p>
+  <a class="deeper" href="learn/price/"><span class="k">Go deeper</span><span class="t">Price, market cap and a year of daily prices</span><span class="a" aria-hidden="true">→</span></a>
+</section>
+
+<section class="chapter numbered c6" id="c6" data-title="Coins with rules" aria-labelledby="h6c">
   <h2 id="h6c">A coin can carry<br>its own rules.</h2>
-  <p class="big">On 30 June 2026 the Toccata upgrade went live. A Kaspa coin can now say how it may be spent, and every miner checks that rule the way it checks a signature.</p>
-  <p>“Only spendable after March.” “Only to my cold wallet.” These rules are covenants. They run on Kaspa itself, with no separate chain. On 27 October there were 1,689 active covenants on mainnet.</p>
+  <p class="big">On 30 June 2026 the <button class="term" type="button" data-pop="Toccata: the network upgrade of 30 June 2026 that switched covenants on.">Toccata</button> upgrade went live. A Kaspa coin can now say how it may be spent, and every miner checks that rule the way it checks a signature.</p>
+  <p>“Only spendable after March.” “Only to my <button class="term" type="button" data-pop="Cold wallet: keys kept offline, on paper or a small device, away from the internet.">cold wallet</button>.” These rules are <button class="term" type="button" data-pop="Covenant: a rule attached to a coin that says how it may be spent. Every miner checks it, the same way it checks a signature.">covenants</button>. They run on Kaspa itself, with no separate chain. On 27 October there were 1,689 active covenants on mainnet.</p>
   <div class="vault" id="vault">
     <div class="vault-head">
       <h3>Rob the vault. You have the owner’s key.</h3>
@@ -243,7 +329,7 @@
         <button class="zone" type="button" data-try="wait">Wait for the date</button>
       </div>
     </div>
-    <p class="out" id="vaultOut" aria-live="polite">Pick a move.</p>
+    <p class="out" id="vaultOut" aria-live="polite">Pick a move. Each try resets the coin.</p>
   </div>
   <details class="more nerd"><summary>How covenants work</summary><div class="in">
     <p>Toccata turned on four proposals. KIP-17 lets a script check the transaction spending it, so a coin can demand a matching next output. KIP-20 gives covenants an ID that consensus tracks, so lookalikes can’t be forged. KIP-16 lets a script check a zero-knowledge proof instead of re-running the work. KIP-21 adds sequencing commitments so an app can prove its own lane. Activation was at DAA score 474,165,565.</p>
@@ -256,52 +342,62 @@
     <li><time datetime="2026-09">Sep 2026</time><b>SilverScript v1</b><span>A readable language for covenant rules.</span></li>
     <li><time datetime="2026-10-21">21 Oct 2026</time><b>KCC-20 token standard</b><span>One agreed token format; wallets still adopting.</span></li>
     <li class="next"><span class="when">No date</span><b>DAGKnight</b><span>Consensus that adapts to the network; heading to testnet.</span></li>
-    <li class="next"><span class="when">No date</span><b>vProgs</b><span>Apps that share state, proven with ZK. A prototype.</span></li>
+    <li class="next"><span class="when">No date</span><b>vProgs</b><span>Shared apps, proven with zero-knowledge maths. A prototype.</span></li>
   </ol>
-  <div class="myths">
-    <p><s>“Toccata raised it to 100 blocks a second.”</s> Wrong. Toccata added covenants; the block rate stayed at ten.</p>
-    <p><s>“Kaspa does 5,000 TPS today.”</s> Misleading. Capacity in tests isn’t everyday use; ask “TPS of what?”</p>
-  </div>
   <p class="note">Status checked 29 Oct 2026 against the core developers’ roundups.</p>
+  <h3>Next: apps checked by maths</h3>
+  <p>Covenants guard one coin at a time. The next step is apps that many people share, like an exchange. They’d run off the network, and send Kaspa a <button class="term" type="button" data-pop="Zero-knowledge proof (ZK): a short piece of maths that proves a computation was done right, so nobody has to run it again to check.">zero-knowledge proof</button>: a few hundred bytes of maths showing the work was done right. Every node checks the proof in milliseconds instead of redoing the work. These apps are called <button class="term" type="button" data-pop="vProgs (verifiable programs): apps that run off the main network and post a ZK proof of their work to Kaspa. A prototype today.">vProgs</button>. They exist as a prototype, not on the live network.</p>
+  <p class="takeaway">For you: rules that <b>no thief, bank or app developer can bend,</b> enforced by the same miners that secure your payment.</p>
+  <a class="deeper" href="learn/vprogs/"><span class="k">Go deeper</span><span class="t">vProgs: apps that prove instead of asking you to trust</span><span class="a" aria-hidden="true">→</span></a>
+  <a class="deeper" href="learn/zk/"><span class="k">Go deeper</span><span class="t">Zero-knowledge proofs, with a cave and a door</span><span class="a" aria-hidden="true">→</span></a>
 </section>
 
-<section class="chapter c7" id="c7" data-title="Check it" aria-labelledby="h7c">
+<section class="chapter numbered c7" id="c7" data-title="Check it" aria-labelledby="h7c">
   <h2 id="h7c">Check it yourself.</h2>
-  <p class="big">Everything above came from the public network. Here it is, unfiltered, with the address each number came from.</p>
+  <p class="big">Everything above came from the public network. Here it is, unfiltered. Each link opens the raw reply the number came from: plain text in a format called JSON, the same thing this page reads.</p>
   <dl class="receipt" id="liveFacts">
-    <div><dt>DAA score, roughly blocks since launch</dt><dd><b class="num" id="lfScore">…</b><a href="https://api.kaspa.org/info/blockdag">api.kaspa.org/info/blockdag</a></dd></div>
-    <div><dt>Mining power securing it</dt><dd><b class="num" id="lfHash">…</b><a href="https://api.kaspa.org/info/hashrate?stringOnly=false">api.kaspa.org/info/hashrate</a></dd></div>
+    <div><dt><button class="term" type="button" data-pop="DAA score: a counter that goes up by about one with every block. Roughly the number of blocks since launch.">DAA score</button>, roughly blocks since launch</dt><dd><b class="num" id="lfScore">…</b><a href="https://api.kaspa.org/info/blockdag">api.kaspa.org/info/blockdag</a></dd></div>
+    <div><dt>Mining power securing it (<button class="term" type="button" data-pop="Hashrate: how many puzzle guesses all miners make a second. PH/s means a million billion guesses a second.">hashrate</button>)</dt><dd><b class="num" id="lfHash">…</b><a href="https://api.kaspa.org/info/hashrate?stringOnly=false">api.kaspa.org/info/hashrate</a></dd></div>
     <div><dt>KAS in circulation</dt><dd><b class="num" id="lfSupply">…</b><a href="https://api.kaspa.org/info/coinsupply">api.kaspa.org/info/coinsupply</a></dd></div>
   </dl>
   <div class="lookup" id="lookup">
     <h3>Look up a transaction</h3>
-    <p>Read-only. Paste an id, or take one from a block that just arrived.</p>
-    <div class="controls"><input type="text" id="txIn" placeholder="transaction id (64 hex characters)" spellcheck="false" autocomplete="off" aria-label="Transaction id"><button class="btn primary" type="button" id="txGo">Look up</button><button class="btn" type="button" id="txRecent">Use a recent one</button></div>
+    <p>Every payment has an id. Press the first button to borrow one from a block that just arrived, or paste your own. Read-only.</p>
+    <div class="controls"><button class="btn primary" type="button" id="txRecent">Use a recent one</button><input type="text" id="txIn" placeholder="or paste a transaction id (64 characters, 0-9 and a-f)" spellcheck="false" autocomplete="off" aria-label="Transaction id"><button class="btn" type="button" id="txGo">Look up</button></div>
     <p class="out" id="txOut" aria-live="polite"></p>
   </div>
   <ol class="next-steps">
     <li><b>Watch the web grow.</b> <a href="https://kgi.kaspad.net">kgi.kaspad.net</a> draws the DAG live.</li>
     <li><b>Hold some.</b> The web wallet at <a href="https://wallet.kaspanet.io">wallet.kaspanet.io</a>. Seed words go on paper, never in a chat.</li>
-    <li><b>No KAS? Use the test network.</b> Free coins at <a href="https://faucet-tn10.kaspanet.io">faucet-tn10.kaspanet.io</a>. Guide: <a href="https://wiki.kaspa.org/en/testnets">wiki.kaspa.org/en/testnets</a>.</li>
+    <li><b>No KAS? Use a <button class="term" type="button" data-pop="Testnet: a copy of the network for testing, with free coins that are worth nothing.">test network</button>.</b> Its coins are free and worth nothing, so mistakes cost nothing. The current test networks and their faucets are listed at <a href="https://wiki.kaspa.org/en/testnets">wiki.kaspa.org/en/testnets</a>.</li>
   </ol>
   <details class="more"><summary>Run a node, mine</summary><div class="in">
     <p>The Rust node, <a href="https://github.com/kaspanet/rusty-kaspa">rusty-kaspa</a>, runs on a normal desktop and keeps only recent history, so it doesn’t grow forever. Small home miners can point at their own node and solo mine; at ten blocks a second, they win blocks often.</p>
   </div></details>
 </section>
 
-<section class="chapter c8" id="c8" data-title="Open questions" aria-labelledby="h8c">
-  <h2 id="h8c">What isn’t settled.</h2>
-  <table class="ledger">
-    <thead><tr><th scope="col">Question</th><th scope="col">Where it stands</th><th scope="col">What would settle it</th></tr></thead>
-    <tbody>
-      <tr><th scope="row">Will fees pay for security?</th><td data-label="Where it stands">New coins shrink every year. Today they pay almost all of miners’ income.</td><td data-label="What would settle it">Fee income growing as the reward falls.</td></tr>
-      <tr><th scope="row">Will people use it?</th><td data-label="Where it stands">1,689 active covenants on 27 Oct 2026; KCC-20 final since 21 Oct.</td><td data-label="What would settle it">Payments and covenant apps with real users, not just holders.</td></tr>
-      <tr><th scope="row">Is the roadmap delivered?</th><td data-label="Where it stands">Crescendo and Toccata shipped. DAGKnight and vProgs have no dates.</td><td data-label="What would settle it">Testnet, then mainnet.</td></tr>
-      <tr><th scope="row">Is mining concentrated?</th><td data-label="Where it stands">Most hashing comes from specialised machines and a few pools.</td><td data-label="What would settle it">Pool share and solo mining over time.</td></tr>
-    </tbody>
-  </table>
-</section>
 
+<section class="chapter tally" id="tally" data-title="Your visit" aria-labelledby="ht">
+  <h2 id="ht">While you read this page.</h2>
+  <div class="tally-grid wide">
+    <div><p class="side-name">Kaspa</p><p class="tally-n num" id="tK">…</p><p class="muted" id="tKnote">blocks</p></div>
+    <div><p class="side-name">Bitcoin</p><p class="tally-n num btc" id="tB">…</p><p class="muted" id="tBnote">blocks</p><div class="slots" id="tBpile"><i></i></div></div>
+  </div>
+  <canvas id="tallyCanvas" class="wide" height="220" aria-hidden="true"></canvas>
+  <p class="big" id="tOut">Counting since you opened the page.</p>
+  <p class="note" id="tSrc">Kaspa: rise in the network’s DAA score, which goes up by about one per block (api.kaspa.org). Bitcoin: rise in block height (mempool.space). Both measured from the moment this page loaded.</p>
+</section>
+<section class="chapter finish" id="finish" data-title="Finish" aria-labelledby="hf">
+  <h2 id="hf">Now say it in two sentences.</h2>
+  <label for="mine" class="muted">Start from this, make it yours.</label>
+  <textarea id="mine" rows="4">Kaspa is money secured like Bitcoin, but it keeps every block instead of throwing the fast ones away. So a payment is final in seconds instead of an hour.</textarea>
+  <div class="controls"><button class="btn primary" type="button" id="copy">Copy</button><span class="out muted" id="copyOut" aria-live="polite"></span></div>
+  <div class="closing">
+    <a class="btn primary" href="https://kgi.kaspad.net">See the live DAG</a>
+    <a class="btn" href="https://wiki.kaspa.org/en/testnets">Get free test coins</a>
+    <p>Test coins live on a copy of the network, so you can send and receive without risking money. Builders: <a href="https://github.com/kaspanet/rusty-kaspa">rusty-kaspa</a> and the KIPs.</p>
+  </div>
+</section>
 <section class="chapter moose" id="moose" data-title="Moose" aria-labelledby="hm">
   <p class="meta">Guest work</p>
   <h2 id="hm">Moose</h2>
@@ -323,25 +419,9 @@
   <p>How to judge money by what it costs to make. Three parts: the case packed as tight as it goes, then the same ground walked slowly from two laws of physics, then the tool aimed at things it was not built for. 279 pages.</p>
   <div class="actions"><a class="primary" href="files/the-instrument.pdf">Read it (PDF)</a></div>
 </section>
-<section class="chapter tally" id="tally" data-title="Your visit" aria-labelledby="ht">
-  <h2 id="ht">While you read this page.</h2>
-  <div class="tally-grid wide">
-    <div><p class="side-name">Kaspa</p><p class="tally-n num" id="tK">…</p><p class="muted" id="tKnote">blocks</p></div>
-    <div><p class="side-name">Bitcoin</p><p class="tally-n num btc" id="tB">…</p><p class="muted" id="tBnote">blocks</p><div class="slots" id="tBpile"><i></i></div></div>
-  </div>
-  <canvas id="tallyCanvas" class="wide" height="220" aria-hidden="true"></canvas>
-  <p class="big" id="tOut">Counting since you opened the page.</p>
-  <p class="note" id="tSrc">Kaspa: rise in the network’s DAA score, which goes up by about one per block (api.kaspa.org). Bitcoin: rise in block height (mempool.space). Both measured from the moment this page loaded.</p>
-</section>
-<section class="chapter finish" id="finish" data-title="Finish" aria-labelledby="hf">
-  <h2 id="hf">Now say it in two sentences.</h2>
-  <label for="mine" class="muted">Start from this, make it yours.</label>
-  <textarea id="mine" rows="4">Kaspa is proof-of-work money like Bitcoin, but it keeps every block instead of throwing the fast ones away. That lets it reach Bitcoin-grade security in seconds instead of an hour.</textarea>
-  <div class="controls"><button class="btn primary" type="button" id="copy">Copy</button><span class="out muted" id="copyOut" aria-live="polite"></span></div>
-  <p>Next: open <a href="https://kgi.kaspad.net">the live DAG</a>, then send yourself 1 KAS or free test coins. Builders: <a href="https://github.com/kaspanet/rusty-kaspa">rusty-kaspa</a> and the KIPs.</p>
-</section>
+
 </main>
-<footer>Independent explainer, not official, not investment advice. Live data: api.kaspa.org and mempool.space, read-only. Checked 29 Oct 2026. <a href="CREDITS.md">Credits</a>.</footer>
+<footer>Independent explainer, not official, not investment advice. Live data: api.kaspa.org, mempool.space and CoinGecko, read-only. Checked 30 Oct 2026. <a href="CREDITS.md">Credits</a>.</footer>
 <script src="vendor/d3.min.js" defer></script>
 <script src="vendor/plot.umd.min.js" defer></script>
 <script src="vendor/interact.min.js" defer></script>
@@ -350,5 +430,7 @@
 <script src="js/collision-sim.js" defer></script>
 <script src="js/live.js" defer></script>
 <script src="js/site.js" defer></script>
+<script src="js/market.js" defer></script>
+<script src="js/vt.js" defer></script>
 </body>
 </html>

@@ -4,8 +4,9 @@
   var API = 'https://api.kaspa.org';
   var $ = function (id) { return document.getElementById(id); };
   var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var css = function (v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); };
-  var fmt = function (n, d) { return n.toLocaleString('en-GB', { maximumFractionDigits: d || 0, minimumFractionDigits: d || 0 }); };
+  var css = KUI.css, fmt = KUI.fmt;
+  var timeFmt = new Intl.DateTimeFormat('en-GB', { hour: 'numeric', minute: 'numeric', second: 'numeric' });
+  var tstr = function (t) { return timeFmt.format(new Date(t)); };
   var L = window.KLive = { times: [], blocks: new Map(), ok: false, failed: false, newest: 0, daa: null, subs: [], sim: false };
   function j(u) { return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
   function markChain() { if (!L.chain) return; var s = L.chain().set; L.blocks.forEach(function (b) { b.chain = s.has(b.h); }); }
@@ -108,6 +109,7 @@
       L.newest = t; prune();
     }, 100);
   }
+  L.retry = function () { if (simTimer) { clearInterval(simTimer); simTimer = null; } L.sim = false; L.failed = false; L.blocks.clear(); L.times.length = 0; L.first = 0; L.newest = 0; busy = false; paused = false; streamedMs = 0; cycle(); };
   setInterval(cycle, 2000); cycle();
   document.addEventListener('visibilitychange', function () { lastTick = performance.now(); if (visible()) cycle(); });
 
@@ -115,7 +117,7 @@
   var ac = null, soundOn = false, lastBeep = 0;
   var sBtn = $('sound');
   if (sBtn) sBtn.addEventListener('click', function () {
-    soundOn = !soundOn; sBtn.setAttribute('aria-pressed', String(soundOn));
+    soundOn = !soundOn; sBtn.setAttribute('aria-pressed', String(soundOn)); var sst = sBtn.querySelector('.st'); if (sst) sst.textContent = soundOn ? 'on' : 'off';
     if (soundOn && !ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
   });
   function tick(chain) {
@@ -126,9 +128,9 @@
   }
 
   function fit(c) {
-    var dpr = window.devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+    var dpr = window.devicePixelRatio || 1, sz = KUI.size(c), w = sz.w, h = sz.h;
     if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
-    var g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); return { g: g, w: w, h: h };
+    var g = sz.g; g.setTransform(dpr, 0, 0, dpr, 0, 0); return { g: g, w: w, h: h };
   }
 
   /* Hero: real blocks scroll in at the pace they were mined. */
@@ -154,9 +156,10 @@
     g.strokeStyle = lineC; g.lineWidth = 1; g.beginPath(); g.moveTo(0, by); g.lineTo(w - 40, by); g.stroke();
     g.fillStyle = faint; g.font = '12px ' + css('--mono'); g.textAlign = 'center'; g.textBaseline = 'top';
     var step = pps > 50 ? 2000 : 3000, first = Math.floor(renderT / step) * step;
-    for (var tt = first; w - 40 - (renderT - tt) * pps / 1000 > 30; tt -= step) {
+    /* no clock labels until the first real block has arrived (renderT 0 would print 1970 times) */
+    for (var tt = renderT ? first : -Infinity; renderT && w - 40 - (renderT - tt) * pps / 1000 > 30; tt -= step) {
       var tx = w - 40 - (renderT - tt) * pps / 1000; g.fillRect(tx, by - 4, 1, 4);
-      g.fillText(new Date(tt).toLocaleTimeString('en-GB'), tx, by + 6);
+      g.fillText(tstr(tt), tx, by + 6);
     }
     /* parent links fade with age */
     g.lineWidth = 1;
@@ -213,12 +216,18 @@
   if (!reduced) { heroIn.classList.add('pre'); }
   var revealed = false;
   function reveal() { if (revealed) return; revealed = true; heroIn.classList.remove('pre'); if (cold) cold.classList.add('gone'); }
-  setTimeout(reveal, reduced ? 0 : 6500);
-  L.subs.push(function () { if (L.ok && !revealed && !reduced) setTimeout(reveal, 3200); });
+  setTimeout(reveal, reduced ? 0 : 2600);
+  L.subs.push(function () { if (L.ok && !revealed && !reduced) setTimeout(reveal, 900); });
+  /* Offsets are cached and refreshed only when the text blocks change size, so the frame loop never forces layout. */
+  var off = null;
+  function readOff() { off = { hudB: hudEl.offsetTop + hudEl.offsetHeight, inL: heroIn.offsetLeft, inW: heroIn.offsetWidth, inT: heroIn.offsetTop }; }
+  if (window.ResizeObserver) { var offRO = new ResizeObserver(function () { off = null; }); offRO.observe(hudEl); offRO.observe(heroIn); offRO.observe(hero); }
+  addEventListener('resize', function () { off = null; });
   function geo(f) {
-    var wide = f.w > 900, top = hudEl.offsetTop + hudEl.offsetHeight + 44;
-    if (wide) return { pps: 80, top: top, bottom: 70, size: 8, ruler: top - 30, dimX: heroIn.offsetLeft + heroIn.offsetWidth + 40, dimY: heroIn.offsetTop - 30 };
-    var bottom = f.h - heroIn.offsetTop + 50;
+    if (!off || !window.ResizeObserver) readOff();
+    var wide = f.w > 900, top = off.hudB + 44;
+    if (wide) return { pps: 80, top: top, bottom: 70, size: 8, ruler: top - 30, dimX: off.inL + off.inW + 40, dimY: off.inT - 30 };
+    var bottom = f.h - off.inT + 50;
     return { pps: 46, top: top, bottom: Math.min(bottom, f.h - top - 80), size: 6, ruler: top - 30 };
   }
   /* Bitcoin at the same scale: how far off-screen its latest block would sit. */
@@ -228,10 +237,10 @@
   function btcScale(pps) {
     var el = $('btcScale'); if (!el || !btc || !L.newest) return;
     var now = performance.now(); if (now - btcAt < 1000) return; btcAt = now;
-    var age = (Date.now() - btc.t) / 1000, px = age * pps, m = px * 0.0254 / 96;
+    var age = Math.max(0, (Date.now() - btc.t) / 1000), px = age * pps, m = px * 0.0254 / 96;
     var mm = Math.floor(age / 60), ss = Math.floor(age % 60);
     el.innerHTML = 'At this scale, Bitcoin’s latest block is <b class="num">' + fmt(m, 1) + ' metres</b> off the left of your screen.';
-    $('btcScaleNote').textContent = 'Bitcoin block #' + fmt(btc.h) + ', mined ' + mm + ' min ' + ss + ' s ago (mempool.space). Its average gap, ten minutes, would be ' + fmt(600 * pps * 0.0254 / 96, 1) + ' metres here.';
+    $('btcScaleNote').textContent = 'Bitcoin block #' + fmt(btc.h) + ', mined ' + (age < 1 ? 'moments' : mm + ' min ' + ss + ' s') + ' ago (mempool.space). Its average gap, ten minutes, would be ' + fmt(600 * pps * 0.0254 / 96, 1) + ' metres here.';
   }
   function frame(ts) {
     var dt = lastF ? Math.min(100, ts - lastF) : 16; lastF = ts;
@@ -258,37 +267,80 @@
     if (!hoverTip) { hoverTip = document.createElement('div'); hoverTip.className = 'pop'; document.body.appendChild(hoverTip); }
     if (!best) { hoverTip.style.display = 'none'; return; }
     hoverTip.style.display = 'block';
-    hoverTip.textContent = 'Block ' + best.h.slice(0, 8) + '…' + best.h.slice(-4) + ' · mined ' + new Date(best.t).toLocaleTimeString('en-GB') + ' your time · points at ' + best.p.length + ' parents · ' + best.tx + ' transactions' + (best.chain ? ' · on the selected chain' : '');
+    hoverTip.textContent = 'Block ' + best.h.slice(0, 8) + '…' + best.h.slice(-4) + ' · mined ' + tstr(best.t) + ' your time · points at ' + best.p.length + ' parents · ' + best.tx + ' transactions' + (best.chain ? ' · on the selected chain' : '');
     hoverTip.style.left = Math.min(e.pageX + 12, document.documentElement.clientWidth - 330) + 'px'; hoverTip.style.top = (e.pageY + 14) + 'px';
   });
   hero.addEventListener('mouseleave', function () { if (hoverTip) hoverTip.style.display = 'none'; });
 
-  /* Chapter 2: freeze ten real seconds, then put them in GHOSTDAG order. */
+  /* Chapter 2: ten seconds of real blocks, put in GHOSTDAG order, on a loop.
+     It starts at once from a recorded sample (data/order-sample.json) and swaps to the live
+     network as soon as enough live blocks have arrived. Each snapshot carries its own block
+     map, so the order never depends on what the live feed has pruned since. */
   var oc = $('orderCanvas'), oGo = $('oGo'), oAgain = $('oAgain'), snap = null, anim = 0, ordered = null;
-  var bw = bigw;
-  function takeSnap() {
+  var bw = bigw, tag = $('orderTag');
+  function chainOf(map) {
+    var top = null; map.forEach(function (b) { if (!top || bigw(b) > bigw(top)) top = b; });
+    var set = new Set(), list = [], c = top;
+    while (c && !set.has(c.h)) { set.add(c.h); list.push(c); c = map.get(c.sp); }
+    return { set: set, list: list.reverse() };
+  }
+  function useSnap(list, map, start, end, sample) {
+    var ch = chainOf(map); list.forEach(function (b) { b.chain = ch.set.has(b.h); });
+    snap = { list: list, map: map, chain: ch.list, start: start, end: end, sample: sample };
+    ordered = null; anim = 0; sel = null; orderCaption = null;
+    paintTag();
+  }
+  function liveSnap() {
     var end = Math.min(renderT || L.newest, L.newest - 2500), start = end - 10000, list = [];
     L.blocks.forEach(function (b) { if (b.t >= start && b.t <= end) list.push(b); });
     list.sort(function (a, b) { return a.t - b.t; });
-    var ch = L.chain(); list.forEach(function (b) { b.chain = ch.set.has(b.h); });
-    snap = { list: list, start: start, end: end }; ordered = null; anim = 0; sel = null; orderCaption = null;
-    if (scrub) { scrub.value = 0; scrub.disabled = true; }
-    drawOrder();
+    useSnap(list, new Map(L.blocks), start, end, false);
   }
+  var SAMPLE = null, sampleT = null;
+  function loadSample() {
+    if (SAMPLE) return Promise.resolve(SAMPLE);
+    return fetch('data/order-sample.json').then(function (r) { return r.json(); }).then(function (d) {
+      var busy = [], hs = d.b.map(function (r) { return r[0]; });
+      var hof = function (i) { return i >= 0 ? hs[i] : 'outside' + i; };
+      var map = new Map(), list = [];
+      d.b.forEach(function (r) {
+        var t = d.t0 + r[1], h = r[0], seed = parseInt(h.slice(0, 6), 16) % LANES, ln = seed;
+        for (var k = 0; k < LANES; k++) { var c = (seed + (k % 2 ? 1 : -1) * Math.ceil(k / 2) + LANES * 4) % LANES; if (!busy[c] || Math.abs(busy[c] - t) > 260) { ln = c; break; } }
+        busy[ln] = t;
+        var b = { h: h, t: t, bs: r[2], p: r[3].map(hof), sp: hof(r[4]), chain: !!r[5], blues: r[6].map(hof), reds: r[7].map(hof), bw: r[8], tx: r[9], lane: ln, jit: (parseInt(h.slice(6, 10), 16) / 65535 - 0.5) * 0.7 };
+        map.set(h, b); list.push(b);
+      });
+      /* A ten-second window, with blocks before it (its parents) and after it (the chain blocks that merge it). */
+      var start = d.t0 + 6000, end = start + 10000;
+      SAMPLE = { map: map, list: list.filter(function (b) { return b.t >= start && b.t <= end; }), start: start, end: end };
+      sampleT = d.t0;
+      return SAMPLE;
+    });
+  }
+  var dateFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+  function paintTag() {
+    if (!tag || !snap) return;
+    if (!snap.sample) { tag.innerHTML = '<b>Live.</b> The last ten seconds of the real network, from api.kaspa.org.'; return; }
+    var when = dateFmt.format(new Date(sampleT));
+    if (L.sim || L.failed) tag.innerHTML = '<b>Recorded sample</b> of real blocks from ' + when + '. The live network can’t be reached right now. <button type="button" class="link" id="orderRetry">Try again</button>';
+    else tag.innerHTML = '<b>Recorded sample</b> of real blocks from ' + when + '. Switching to live blocks as soon as they arrive.';
+    var rb = $('orderRetry'); if (rb) rb.addEventListener('click', function () { tag.textContent = 'Trying the live network again…'; L.retry(); });
+  }
+  function liveReady() { return L.ok && !L.sim && L.newest - L.first > 16000 && !!renderT; }
   function computeOrder() {
     /* Rank every block that some known chain block has merged. */
-    var ch = L.chain(), chain = ch.list;
-    snap.list.forEach(function (b) { b.chain = ch.set.has(b.h); });
+    var chain = snap.chain, map = snap.map;
     var rank = new Map(), r = 0;
     chain.forEach(function (c) {
-      var ms = c.blues.concat(c.reds).filter(function (h) { return h !== c.sp; }).map(function (h) { return L.blocks.get(h) || { h: h, bw: '0' }; });
+      var ms = c.blues.concat(c.reds).filter(function (h) { return h !== c.sp; }).map(function (h) { return map.get(h) || { h: h, bw: '0' }; });
       ms.sort(function (a, b) { var d = bw(a) - bw(b); return d < 0n ? -1 : d > 0n ? 1 : (a.h < b.h ? -1 : 1); });
       ms.forEach(function (m) { if (!rank.has(m.h)) rank.set(m.h, r++); });
       if (!rank.has(c.h)) rank.set(c.h, r++);
     });
     var inOrder = snap.list.filter(function (b) { return rank.has(b.h); }).sort(function (a, b) { return rank.get(a.h) - rank.get(b.h); });
     var waiting = snap.list.filter(function (b) { return !rank.has(b.h); });
-    var reds = 0; chain.forEach(function (c) { c.reds.forEach(function (h) { if (snap.list.some(function (b) { return b.h === h; })) reds++; }); });
+    var inSnap = new Set(snap.list.map(function (b) { return b.h; }));
+    var reds = 0; chain.forEach(function (c) { c.reds.forEach(function (h) { if (inSnap.has(h)) reds++; }); });
     ordered = { list: inOrder, waiting: waiting, reds: reds, chains: snap.list.filter(function (b) { return b.chain; }).length };
   }
   function ease(x) { return x < 0 ? 0 : x > 1 ? 1 : 1 - Math.pow(1 - x, 3); }
@@ -303,8 +355,9 @@
     var line = css('--line'), teal = css('--green'), text = css('--text'), faint = css('--faint'), orange = css('--orange');
     g.clearRect(0, 0, w, h);
     g.font = (w < 560 ? '12px ' : '13px ') + css('--font'); g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillStyle = faint;
-    var tsA = new Date(snap.start).toLocaleTimeString('en-GB'), tsB = new Date(snap.end).toLocaleTimeString('en-GB');
-    g.fillText(w < 560 ? tsA + ' to ' + tsB + ', your time' : 'Ten real seconds, as mined: ' + tsA + ' to ' + tsB + ' your time', 24, 16);
+    var tsA = tstr(snap.start), tsB = tstr(snap.end);
+    var lead = snap.sample ? 'Recorded' : 'Live';
+    g.fillText(w < 560 ? lead + ': ' + tsA + ' to ' + tsB : lead + ': ten real seconds, ' + tsA + ' to ' + tsB + ' your time', 24, 16);
     var seq = ordered ? ordered.list : [], N = seq.length;
     var A = Math.min(1, anim / 0.62), B = ease((anim - 0.66) / 0.34);
     var visited = ordered ? Math.floor(A * N) : 0, rank = new Map(); seq.forEach(function (b, i) { rank.set(b.h, i); });
@@ -329,8 +382,7 @@
       g.globalAlpha = 1;
     }
     g.fillStyle = faint;
-    if (!ordered) g.fillText(w < 560 ? 'One slot per block. Line them up to fill it.' : 'One slot per block: the single order every node will compute. Line them up to fill it.', 24, dagH + 34);
-    else { g.globalAlpha = Math.max(0.6, B); g.fillText('The one order every node computes, read left to right', 24, dagH + 34); g.globalAlpha = 1; }
+    if (ordered) { g.globalAlpha = Math.max(0.6, B); g.fillText('The one order every node computes, read left to right', 24, dagH + 34); g.globalAlpha = 1; }
     snap.list.forEach(function (b) {
       var p = pos.get(b.h), r = rank.has(b.h) ? rank.get(b.h) : -1, x = p.x, y = p.y, lit = r >= 0 && r < visited;
       if (ordered && r >= 0 && B > 0) { var q = T(r), k = ease(B * 1.4 - (r / Math.max(1, N)) * 0.4); x = p.x + (q.x - p.x) * k; y = p.y + (q.y - p.y) * k;
@@ -374,35 +426,73 @@
     var b = d.b, inView = b.p.filter(function (ph) { return snap.list.some(function (o) { return o.h === ph; }); }).length;
     var kids = snap.list.filter(function (o) { return o.p.indexOf(b.h) >= 0; }).length;
     var place = ordered ? ordered.list.indexOf(b) : -1;
-    inspect.textContent = 'Block ' + b.h.slice(0, 8) + '…, mined ' + new Date(b.t).toLocaleTimeString('en-GB') + '. Points at ' + b.p.length + (b.p.length === 1 ? ' parent' : ' parents') +
+    inspect.textContent = 'Block ' + b.h.slice(0, 8) + '…, mined ' + tstr(b.t) + '. Points at ' + b.p.length + (b.p.length === 1 ? ' parent' : ' parents') +
       (b.p.length ? ' (' + inView + ' in this window, orange)' : '') + '; ' + kids + (kids === 1 ? ' later block points' : ' later blocks point') + ' back at it.' +
       (b.chain ? ' On the selected chain.' : '') + (place >= 0 ? ' Place in the agreed order: ' + (place + 1) + ' of ' + ordered.list.length + '.' : '');
   }
   oc.addEventListener('pointermove', function (e) { if (e.pointerType === 'mouse') pick(e); });
   oc.addEventListener('click', pick);
-  if (scrub) scrub.addEventListener('input', function () {
-    if (!ordered) return; orderRun++; anim = +scrub.value / 1000; drawOrder();
-    if (anim >= 1 && orderCaption) orderCaption(); else $('orderOut').textContent = 'Scrubbing: ' + fmt(Math.floor(Math.min(1, anim / 0.62) * ordered.list.length)) + ' of ' + fmt(ordered.list.length) + ' blocks threaded.';
-  });
-  var orderRun = 0, orderCaption = null;
-  function playOrder() {
-    computeOrder();
-    var o = ordered;
-    $('orderOut').textContent = 'Threading ' + fmt(o.list.length) + ' real blocks in GHOSTDAG order…';
-    var caption = function () { $('orderOut').innerHTML = '<b>' + fmt(snap.list.length) + ' real blocks</b>, mined in parallel in ten seconds, now in one line. ' +
-      fmt(o.chains) + (o.chains === 1 ? ' is a chain block' : ' are chain blocks') + ' (white): each one merged the blocks it saw. Red: <b>' + o.reds + '</b>.' +
-      (o.waiting.length ? ' ' + o.waiting.length + ' newest still waiting for a chain block to merge them (grey).' : ''); };
-    orderCaption = caption; if (scrub) scrub.disabled = false;
-    if (reduced) { anim = 1; if (scrub) scrub.value = 1000; drawOrder(); caption(); return; }
-    var t0 = performance.now(), lastV = 0, run = ++orderRun;
-    /* a newer click or a fresh snapshot ends this run, so it never reads a cleared order */
-    (function step(now) { if (run !== orderRun || ordered !== o) return; anim = Math.min(1, (now - t0) / 6000); if (scrub) scrub.value = Math.round(anim * 1000); var v = Math.floor(Math.min(1, anim / 0.62) * o.list.length); if (v > lastV) { tick(o.list[v - 1] && o.list[v - 1].chain); lastV = v; } drawOrder(); if (anim < 1) requestAnimationFrame(step); else caption(); })(t0);
+  var orderRun = 0, orderCaption = null, playing = true, holdT = null, inView = false, startedOnce = false;
+  function step(n) { ['os1', 'os2', 'os3'].forEach(function (id, i) { var e = $(id); if (e) e.classList.toggle('on', i === n); }); }
+  function caption() {
+    var o = ordered; if (!o) return;
+    $('orderOut').innerHTML = '<b>' + fmt(snap.list.length) + (snap.sample ? ' recorded blocks' : ' live blocks') + '</b>, mined in parallel in ten seconds, now in one line. ' +
+      fmt(o.chains) + (o.chains === 1 ? ' is a chain block' : ' are chain blocks') + ' (darkest): each one merged the blocks it saw. Judged red: <b>' + o.reds + '</b>.' +
+      (o.waiting.length ? ' ' + o.waiting.length + ' newest still waiting for a chain block to merge them (grey).' : '');
   }
-  oGo.addEventListener('click', function () { takeSnap(); playOrder(); oGo.textContent = 'Line them up again'; });
-  oAgain.addEventListener('click', function () { takeSnap(); $('orderOut').textContent = 'A fresh ten seconds from the network. Line them up.'; });
-  L.subs.push(function () {
-    if (oGo.disabled && L.newest - L.first > 16000 && renderT) { takeSnap(); oGo.disabled = false; oGo.textContent = 'Line them up'; if (L.sim) $('orderOut').textContent = 'The live network could not be reached; this is a simulation and the order step is unavailable.'; }
+  function playOrder() {
+    clearTimeout(holdT);
+    if (!ordered) computeOrder();
+    orderCaption = caption;
+    var o = ordered, run = ++orderRun;
+    $('orderOut').textContent = 'Threading ' + fmt(o.list.length) + ' blocks in GHOSTDAG order…';
+    if (reduced) { anim = 1; scrub.value = 1000; drawOrder(); caption(); return; }
+    var t0 = performance.now() - anim * 6000, lastV = 0;
+    (function frame(now) {
+      if (run !== orderRun || ordered !== o) return;
+      if (!inView) { t0 = now - anim * 6000; requestAnimationFrame(frame); return; }
+      anim = Math.min(1, (now - t0) / 6000); scrub.value = Math.round(anim * 1000);
+      var v = Math.floor(Math.min(1, anim / 0.62) * o.list.length); if (v > lastV) { tick(o.list[v - 1] && o.list[v - 1].chain); lastV = v; }
+      drawOrder();
+      if (anim < 1) requestAnimationFrame(frame);
+      else { caption(); holdT = setTimeout(next, 3500); }
+    })(performance.now());
+  }
+  /* Loop: after a short hold, start again, on fresh live blocks once they are there. */
+  function next() {
+    if (!playing) return;
+    if (liveReady()) liveSnap(); else ordered = null;
+    anim = 0; playOrder();
+  }
+  function setPlaying(on) {
+    playing = on; oGo.textContent = on ? 'Pause' : 'Play'; oGo.setAttribute('aria-pressed', String(!on));
+    if (on) { step(0); if (anim >= 1) next(); else playOrder(); } else { orderRun++; clearTimeout(holdT); }
+  }
+  function start() {
+    if (startedOnce) return; startedOnce = true;
+    if (liveReady()) { liveSnap(); playOrder(); return; }
+    loadSample().then(function (S) { if (snap) return; useSnap(S.list, S.map, S.start, S.end, true); playOrder(); })
+      .catch(function () { $('orderOut').textContent = 'The recorded sample didn’t load. Waiting for live blocks…'; startedOnce = false; });
+  }
+  oGo.setAttribute('aria-pressed', 'false');
+  oGo.addEventListener('click', function () { if (snap) setPlaying(!playing); });
+  oAgain.hidden = true;
+  oAgain.addEventListener('click', function () { if (!liveReady()) return; liveSnap(); step(0); playing = true; oGo.textContent = 'Pause'; oGo.setAttribute('aria-pressed', 'false'); playOrder(); });
+  scrub.addEventListener('input', function () {
+    if (!snap) return; if (!ordered) computeOrder();
+    if (playing) { playing = false; oGo.textContent = 'Play'; oGo.setAttribute('aria-pressed', 'true'); clearTimeout(holdT); }
+    orderRun++; step(1); anim = +scrub.value / 1000; drawOrder();
+    if (anim >= 1) caption(); else $('orderOut').textContent = 'Scrubbing: ' + fmt(Math.floor(Math.min(1, anim / 0.62) * ordered.list.length)) + ' of ' + fmt(ordered.list.length) + ' blocks threaded. Press Play to carry on.';
   });
+  oc.addEventListener('click', function () { if (sel) step(2); });
+  L.subs.push(function () {
+    if (liveReady()) { oAgain.hidden = false; if (snap && snap.sample && playing && anim >= 1) next(); }
+    if (snap && snap.sample) paintTag();
+  });
+  if (window.IntersectionObserver) {
+    new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) start(); }); }, { rootMargin: '1200px 0px' }).observe(oc);
+    new IntersectionObserver(function (es) { es.forEach(function (e) { inView = e.isIntersecting; }); }).observe(oc);
+  } else { inView = true; start(); }
   addEventListener('resize', function () { drawOrder(); });
 
   /* ---- Your visit: real counts since page load ---- */
@@ -428,7 +518,7 @@
       $('tBnote').textContent = 'blocks in ' + since;
       if (!ok) { $('tOut').textContent = (L.sim && k0 === null) ? 'The live networks could not be reached from your browser, so there is nothing to count.' : 'Counting since you opened the page (' + since + ').'; }
       else if (nB === 0) {
-        var age = bt ? Math.floor((Date.now() - bt.t) / 60000) : null;
+        var age = bt ? Math.max(0, Math.floor((Date.now() - bt.t) / 60000)) : null;
         $('tOut').innerHTML = 'You have been here ' + since + '. Kaspa added about <b class="num">' + fmt(nK) + '</b> blocks. Bitcoin added none' + (age !== null ? ': its newest, #' + fmt(bt.h) + ', is ' + age + ' min old.' : '.') + ' Both are secured by proof-of-work.';
       } else {
         $('tOut').innerHTML = 'You have been here ' + since + '. Kaspa added about <b class="num">' + fmt(nK) + '</b> blocks; Bitcoin added <b class="num">' + fmt(nB) + '</b>. Both are secured by proof-of-work.';

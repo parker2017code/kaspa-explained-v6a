@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Seconds versus an hour · Kaspa Explained</title>
+<meta name="description" content="How safe a Kaspa payment is after a few seconds, compared with Bitcoin after an hour, using Satoshi’s own formula.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f5f1e8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22%3E%3Ccircle cx=%224%22 cy=%2210%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3Ccircle cx=%2216%22 cy=%224.5%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3Ccircle cx=%2216%22 cy=%2215.5%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3C/svg%3E">
+<link rel="preload" href="../../fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../css/site.css">
+<script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('ke-theme2');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body class="deep-page">
+<header class="bar"><div class="bar-in">
+  <a class="brand" href="../../"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4" cy="10" r="2.6" fill="currentColor"/><circle cx="16" cy="4.5" r="2.6" fill="currentColor"/><circle cx="16" cy="15.5" r="2.6" fill="currentColor"/><path d="M6 9 14 5M6 11l8 4" stroke="currentColor" stroke-width="1.4"/></svg>Kaspa Explained</a>
+  <div class="switch"><button type="button" id="theme" aria-label="Switch day or night colours">Night</button></div>
+</div><div class="progress" id="progress"></div></header>
+<main class="deep" id="main">
+  <a class="back" href="../../#c4" data-back>← Back to “The race”</a>
+  <p class="kicker">Go deeper · Security</p>
+  <h1>Seconds versus an hour</h1>
+  <p class="lede">A payment is safe when undoing it would cost more than anyone could spend. On <button class="term" type="button" data-pop="Proof-of-work: computers race to solve a costly puzzle. The winner adds the next block and is paid in new coins. To cheat you would have to out-spend everyone else on machines and electricity.">proof-of-work</button> networks that cost grows with every <button class="term" type="button" data-pop="Confirmation: each new block built on top of yours. The more there are, the harder your payment is to undo.">confirmation</button>. Kaspa makes blocks 6,000 times as often as Bitcoin.</p>
+  <section>
+    <h2>Why it matters to you</h2>
+    <p>A shop that waits an hour for Bitcoin to settle can’t sell you a coffee with it. Kaspa’s builders put a typical confirmation at 1 to 3 seconds. That’s the difference between money for savings and money for paying.</p>
+  </section>
+  <section>
+    <h2>How it works: the catch-up race</h2>
+    <p>To undo your payment, an attacker secretly mines a different history and publishes it once it is longer than the real one. Satoshi Nakamoto worked out the odds in the Bitcoin paper: with a share <i>q</i> of all mining, how likely is the attacker to catch up from <i>z</i> blocks behind?</p>
+    <p>The answer shrinks fast with every block, as long as the attacker has under half. Move the slider to see how long Bitcoin needs.</p>
+    <figure class="inter" data-inter="race">
+      <div class="inter-row"><label for="qIn">Attacker’s share of all mining <output id="qVal">10%</output></label><input type="range" id="qIn" min="5" max="45" value="10"></div>
+      <canvas id="raceCanvas" height="240" aria-label="Chance of reversal against minutes waited, for Bitcoin"></canvas>
+      <p class="big-out" id="raceBig">60 min</p>
+      <div class="readout" id="raceOut" aria-live="polite"></div>
+      <figcaption><b>Maths</b>Nakamoto’s formula from section 11 of the Bitcoin paper, at one block every ten minutes. The line is the chance the attacker ever catches up.</figcaption>
+    </figure>
+  </section>
+  <section>
+    <h2>Where Kaspa differs</h2>
+    <p>Kaspa uses the same kind of proof-of-work, so the same rule holds: under half of all mining, an attacker falls further behind with every block. Ten blocks a second means the honest side pulls ahead in seconds, not hours.</p>
+    <p>The formula above assumes a chain. For Kaspa’s web of blocks, the GHOSTDAG paper proves the matching result, as long as the network delay stays inside the margin <button class="term" type="button" data-pop="k: GHOSTDAG’s safety margin. How many honest blocks a block may have missed and still count as honest itself.">k</button> was set for.</p>
+    <p>Past half of all mining, any proof-of-work coin can be rewritten. Bitcoin is no exception. What protects both is that buying that much mining costs more than an attack could earn.</p>
+  </section>
+  <section>
+    <h2>What isn’t settled</h2>
+    <p>Kaspa’s total <button class="term" type="button" data-pop="Hashrate: how many puzzle guesses all miners make a second. PH/s means a million billion guesses a second.">hashrate</button> is smaller than Bitcoin’s, so renting half of it costs less. And the 1 to 3 seconds is the builders’ own figure, not an outside audit.</p>
+  </section>
+  <section class="sources-sec"><h2>Sources</h2><ul class="sources"><li>Satoshi Nakamoto, <a href="https://bitcoin.org/bitcoin.pdf">Bitcoin: A Peer-to-Peer Electronic Cash System</a> (2008), section 11.</li><li>Sompolinsky, Wyborski and Zohar, <a href="https://eprint.iacr.org/2018/104">PHANTOM and GHOSTDAG</a>.</li><li>Kaspa’s 1 to 3 seconds: Yonatan Sompolinsky, as cited on the main page. Checked 30 Oct 2026.</li></ul></section>
+  <nav class="next-deep" aria-label="Next deep dive"><a class="deeper" href="../supply/"><span class="k">Next deep dive</span><span class="t">Where every coin comes from</span><span class="a" aria-hidden="true">→</span></a></nav>
+</main>
+<footer>Independent explainer, not official, not investment advice. <a href="../../">Back to the start</a> · <a href="../../CREDITS.md">Credits</a>.</footer>
+<script src="../../js/deep.js" defer></script>
+</body>
+</html>

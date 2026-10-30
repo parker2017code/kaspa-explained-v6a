@@ -18,7 +18,7 @@ test('Moose files are byte-for-byte v5', () => {
 
 // Copy is British English (Moose's guest section is excluded: printed as he wrote it).
 const US = /\b(colou?r(?<=color)\w*|favor\w*|honor\w*|behavior\w*|neighbor\w*|flavor\w*|\w+(ization|izing|ized|izes)|center\w*|meters?|liters?|math|modeling|modeled|labeling|labeled|traveling|traveled|canceling|canceled|defense|gray|catalog|analyz\w+|skeptic\w*)\b/gi;
-const OK_US = new Set(['size', 'sized', 'seize']);
+const OK_US = new Set(['size', 'sized', 'sizes', 'seize', 'seized', 'seizes', 'prize', 'prizes']);
 // Human copy only: text between tags in the HTML, and string literals containing a space in the scripts.
 const visible = h => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, ' ').replace(/<[^>]+>/g, ' ');
 const strings = js => [...js.matchAll(/'((?:[^'\\\n]|\\.)*)'/g)].map(m => m[1].replace(/<[^>]*>/g, ' ')).filter(t => /\s/.test(t) && /[a-z]{3}/i.test(t)).join('\n');
@@ -42,7 +42,7 @@ test('no third-party wallets or explorers', () => {
 });
 test('every vendored component is credited', () => {
   const c = read('CREDITS.md');
-  for (const n of ['d3', 'Observable Plot', 'interact.js', 'NumberFlow', 'Mona Sans', 'Monaspace']) expect(c, n).toContain(n);
+  for (const n of ['d3', 'Observable Plot', 'interact.js', 'NumberFlow', 'Source Serif 4', 'Monaspace']) expect(c, n).toContain(n);
   for (const f of fs.readdirSync(path.join(ROOT, 'vendor'))) expect(c, f).toContain(f);
 });
 test('no placeholder copy', () => {

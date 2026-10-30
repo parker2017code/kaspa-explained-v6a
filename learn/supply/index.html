@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Where every coin comes from · Kaspa Explained</title>
+<meta name="description" content="How many Kaspa coins exist, how many ever will, and how the rest come out, year by year.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f5f1e8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22%3E%3Ccircle cx=%224%22 cy=%2210%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3Ccircle cx=%2216%22 cy=%224.5%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3Ccircle cx=%2216%22 cy=%2215.5%22 r=%223%22 fill=%22%231b6a5f%22/%3E%3C/svg%3E">
+<link rel="preload" href="../../fonts/source-serif-4-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../css/site.css">
+<script>document.documentElement.classList.add('js');try{var t=localStorage.getItem('ke-theme2');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body class="deep-page">
+<header class="bar"><div class="bar-in">
+  <a class="brand" href="../../"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4" cy="10" r="2.6" fill="currentColor"/><circle cx="16" cy="4.5" r="2.6" fill="currentColor"/><circle cx="16" cy="15.5" r="2.6" fill="currentColor"/><path d="M6 9 14 5M6 11l8 4" stroke="currentColor" stroke-width="1.4"/></svg>Kaspa Explained</a>
+  <div class="switch"><button type="button" id="theme" aria-label="Switch day or night colours">Night</button></div>
+</div><div class="progress" id="progress"></div></header>
+<main class="deep" id="main">
+  <a class="back" href="../../#c5" data-back>← Back to “Supply”</a>
+  <p class="kicker">Go deeper · Supply and emission</p>
+  <h1>Where every coin comes from</h1>
+  <p class="lede">There will only ever be about 28.7 billion <button class="term" type="button" data-pop="KAS: Kaspa’s coin, the unit you hold and send. 1 KAS = 100,000,000 sompi.">KAS</button>. Most already exist. The rest trickle out to miners on a fixed schedule that ends around 2057, and nobody can change it without every node agreeing.</p>
+  <section>
+    <h2>Why it matters to you</h2>
+    <p>If you hold a coin, you want to know how many more will be made. More coins mean each one is a smaller share. With Kaspa the answer is fixed and public: no company can print more, and there was no early sale to insiders.</p>
+  </section>
+  <section>
+    <h2>How it works: a smooth step down</h2>
+    <p>Every new block pays its miner in freshly made coins. Bitcoin cuts that pay in half every four years in one jump, a <button class="term" type="button" data-pop="Halving: the moment the reward for a block drops to half. Bitcoin does it in one jump every four years.">halving</button>. Kaspa cuts it the same amount over a year, in twelve monthly steps of about 5.6%, so there is never a cliff.</p>
+    <p>Drag through the years to see how much exists, and how fast new coins appear then.</p>
+    <figure class="inter" data-inter="supply">
+      <canvas id="supCanvas" height="240" aria-label="Kaspa supply over the years"></canvas>
+      <div class="inter-row"><label for="supYear">Year <output id="supYearVal">2030</output></label><input type="range" id="supYear" min="2027" max="2060" value="2030" step="0.0833"></div>
+      <div class="readout grid3" aria-live="polite"><div><span>Coins out</span><b id="supOut">–</b></div><div><span>Share of the maximum</span><b id="supPct">–</b></div><div><span>New coins a second</span><b id="supRate">–</b></div></div>
+      <figcaption><b>Maths</b>Kaspa’s published schedule, run forward from the supply read from api.kaspa.org on 30 Oct 2026. Exact monthly steps, not a smooth curve fit.</figcaption>
+    </figure>
+  </section>
+  <section>
+    <h2>What isn’t settled</h2>
+    <p>Nothing about the schedule. The open question is what happens once new coins are tiny, and miners have to live on <button class="term" type="button" data-pop="Fee: what you pay the miner to include your payment. On Kaspa usually a tiny fraction of a cent.">fee</button>s instead. That has its own page.</p>
+  </section>
+  <section class="sources-sec"><h2>Sources</h2><ul class="sources"><li>Supply: <a href="https://api.kaspa.org/info/coinsupply">api.kaspa.org/info/coinsupply</a>, read 30 Oct 2026, 14:42 CET.</li><li>Schedule: Kaspa’s chromatic emission, as implemented in rusty-kaspa (<a href="https://github.com/kaspanet/rusty-kaspa">github.com/kaspanet/rusty-kaspa</a>).</li></ul></section>
+  <nav class="next-deep" aria-label="Next deep dive"><a class="deeper" href="../fees/"><span class="k">Next deep dive</span><span class="t">Who pays the miners later</span><span class="a" aria-hidden="true">→</span></a></nav>
+</main>
+<footer>Independent explainer, not official, not investment advice. <a href="../../">Back to the start</a> · <a href="../../CREDITS.md">Credits</a>.</footer>
+<script src="../../js/deep.js" defer></script>
+</body>
+</html>
