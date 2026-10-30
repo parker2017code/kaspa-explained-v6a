@@ -5,7 +5,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var css = function (v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); };
-  var fmt = function (n, d) { return n.toLocaleString('en-US', { maximumFractionDigits: d || 0, minimumFractionDigits: d || 0 }); };
+  var fmt = function (n, d) { return n.toLocaleString('en-GB', { maximumFractionDigits: d || 0, minimumFractionDigits: d || 0 }); };
   var L = window.KLive = { times: [], blocks: new Map(), ok: false, failed: false, newest: 0, daa: null, subs: [], sim: false };
   function j(u) { return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
   function markChain() { if (!L.chain) return; var s = L.chain().set; L.blocks.forEach(function (b) { b.chain = s.has(b.h); }); }
@@ -27,7 +27,7 @@
     if (o) { o.chain = !!v.isChainBlock; o.blues = v.mergeSetBluesHashes || []; o.reds = v.mergeSetRedsHashes || []; return false; }
     var t = +h.timestamp;
     L.blocks.set(v.hash, { h: v.hash, t: t, bs: +v.blueScore, p: (h.parents && h.parents[0]) ? h.parents[0].parentHashes : [], sp: v.selectedParentHash,
-      chain: !!v.isChainBlock, blues: v.mergeSetBluesHashes || [], reds: v.mergeSetRedsHashes || [], bw: h.blueWork || '0', tx: (v.transactionIds || []).length, lane: lane(t, v.hash), jit: (parseInt(v.hash.slice(6, 10), 16) / 65535 - 0.5) * 0.7 });
+      chain: !!v.isChainBlock, blues: v.mergeSetBluesHashes || [], reds: v.mergeSetRedsHashes || [], bw: h.blueWork || '0', tx: (v.transactionIds || []).length, tid: (v.transactionIds || [])[1] || (v.transactionIds || [])[0] || null, lane: lane(t, v.hash), jit: (parseInt(v.hash.slice(6, 10), 16) / 65535 - 0.5) * 0.7 });
     if (t > L.newest) L.newest = t;
     L.times.push(t);
     if (!L.first || t < L.first) L.first = t;
@@ -85,7 +85,7 @@
     if (L.sim) {
       s.textContent = 'Simulation: the live network could not be reached from your browser.'; var co = $('coldOpen'); if (co) co.textContent = 'Simulated blocks: the live network could not be reached.';
       // Nothing measured offline: say so instead of leaving "…" forever.
-      ['hudRate', 'hudPar', 'tK', 'tB'].forEach(function (id) { var e = $(id); if (e) e.textContent = '–'; });
+      ['hudRate', 'hudPar', 'tK', 'tB'].forEach(function (id) { var e = $(id); if (e && window.KUI) KUI.num(e, null, null, '–'); else if (e) e.textContent = '–'; });
       var sc = $('lfScore'); if (sc && sc.textContent === '…') sc.textContent = 'not reachable';
       var oo = $('orderOut'); if (oo && /real network, not a simulation/.test(oo.textContent)) oo.textContent = 'The live network could not be reached; this is a simulation and the order step is unavailable.';
       return;
@@ -95,7 +95,7 @@
       : 'Live from api.kaspa.org, shown a few seconds behind real time.';
     var r = $('resume'); if (r) r.addEventListener('click', function () { paused = false; streamedMs = 0; setSource(); });
   }
-  /* Fallback only if the API is unreachable: a labeled simulation at 10 blocks a second. */
+  /* Fallback only if the API is unreachable: a labelled simulation at 10 blocks a second. */
   var simTimer = null;
   function startSim() {
     if (simTimer) return; L.sim = true;
@@ -156,7 +156,7 @@
     var step = pps > 50 ? 2000 : 3000, first = Math.floor(renderT / step) * step;
     for (var tt = first; w - 40 - (renderT - tt) * pps / 1000 > 30; tt -= step) {
       var tx = w - 40 - (renderT - tt) * pps / 1000; g.fillRect(tx, by - 4, 1, 4);
-      g.fillText(new Date(tt).toLocaleTimeString('en-US'), tx, by + 6);
+      g.fillText(new Date(tt).toLocaleTimeString('en-GB'), tx, by + 6);
     }
     /* parent links fade with age */
     g.lineWidth = 1;
@@ -204,9 +204,9 @@
   function hud(ts) {
     if (ts - hudAt < 400 || !L.newest) return; hudAt = ts;
     var st = L.stats();
-    if (st.rate !== null && !L.sim) $('hudRate').textContent = fmt(st.rate, 1);
-    if (st.par !== null && !L.sim) $('hudPar').textContent = fmt(st.par, 1);
-    $('hudSeen').textContent = fmt(st.seen);
+    if (st.rate !== null && !L.sim) KUI.num($('hudRate'), +st.rate.toFixed(1), { d: 1 }, fmt(st.rate, 1));
+    if (st.par !== null && !L.sim) KUI.num($('hudPar'), +st.par.toFixed(1), { d: 1 }, fmt(st.par, 1));
+    KUI.num($('hudSeen'), st.seen, null, fmt(st.seen));
   }
   var heroIn = document.querySelector('.hero-in'), hudEl = $('hud'), cold = $('coldOpen');
   document.documentElement.classList.add('js');
@@ -219,7 +219,7 @@
     var wide = f.w > 900, top = hudEl.offsetTop + hudEl.offsetHeight + 44;
     if (wide) return { pps: 80, top: top, bottom: 70, size: 8, ruler: top - 30, dimX: heroIn.offsetLeft + heroIn.offsetWidth + 40, dimY: heroIn.offsetTop - 30 };
     var bottom = f.h - heroIn.offsetTop + 50;
-    return { pps: 46, top: top, bottom: Math.min(bottom, f.h - top - 80), size: 6 };
+    return { pps: 46, top: top, bottom: Math.min(bottom, f.h - top - 80), size: 6, ruler: top - 30 };
   }
   /* Bitcoin at the same scale: how far off-screen its latest block would sit. */
   var btc = null, btcAt = 0;
@@ -230,8 +230,8 @@
     var now = performance.now(); if (now - btcAt < 1000) return; btcAt = now;
     var age = (Date.now() - btc.t) / 1000, px = age * pps, m = px * 0.0254 / 96;
     var mm = Math.floor(age / 60), ss = Math.floor(age % 60);
-    el.innerHTML = 'At this scale, Bitcoin’s latest block is <b class="num">' + fmt(m, 1) + ' meters</b> off the left of your screen.';
-    $('btcScaleNote').textContent = 'Bitcoin block #' + fmt(btc.h) + ', mined ' + mm + ' min ' + ss + ' s ago (mempool.space). Its average gap, ten minutes, would be ' + fmt(600 * pps * 0.0254 / 96, 1) + ' meters here.';
+    el.innerHTML = 'At this scale, Bitcoin’s latest block is <b class="num">' + fmt(m, 1) + ' metres</b> off the left of your screen.';
+    $('btcScaleNote').textContent = 'Bitcoin block #' + fmt(btc.h) + ', mined ' + mm + ' min ' + ss + ' s ago (mempool.space). Its average gap, ten minutes, would be ' + fmt(600 * pps * 0.0254 / 96, 1) + ' metres here.';
   }
   function frame(ts) {
     var dt = lastF ? Math.min(100, ts - lastF) : 16; lastF = ts;
@@ -258,7 +258,7 @@
     if (!hoverTip) { hoverTip = document.createElement('div'); hoverTip.className = 'pop'; document.body.appendChild(hoverTip); }
     if (!best) { hoverTip.style.display = 'none'; return; }
     hoverTip.style.display = 'block';
-    hoverTip.textContent = 'Block ' + best.h.slice(0, 8) + '…' + best.h.slice(-4) + ' · mined ' + new Date(best.t).toLocaleTimeString('en-US') + ' your time · points at ' + best.p.length + ' parents · ' + best.tx + ' transactions' + (best.chain ? ' · on the selected chain' : '');
+    hoverTip.textContent = 'Block ' + best.h.slice(0, 8) + '…' + best.h.slice(-4) + ' · mined ' + new Date(best.t).toLocaleTimeString('en-GB') + ' your time · points at ' + best.p.length + ' parents · ' + best.tx + ' transactions' + (best.chain ? ' · on the selected chain' : '');
     hoverTip.style.left = Math.min(e.pageX + 12, document.documentElement.clientWidth - 330) + 'px'; hoverTip.style.top = (e.pageY + 14) + 'px';
   });
   hero.addEventListener('mouseleave', function () { if (hoverTip) hoverTip.style.display = 'none'; });
@@ -271,7 +271,8 @@
     L.blocks.forEach(function (b) { if (b.t >= start && b.t <= end) list.push(b); });
     list.sort(function (a, b) { return a.t - b.t; });
     var ch = L.chain(); list.forEach(function (b) { b.chain = ch.set.has(b.h); });
-    snap = { list: list, start: start, end: end }; ordered = null; anim = 0;
+    snap = { list: list, start: start, end: end }; ordered = null; anim = 0; sel = null; orderCaption = null;
+    if (scrub) { scrub.value = 0; scrub.disabled = true; }
     drawOrder();
   }
   function computeOrder() {
@@ -298,10 +299,11 @@
     var X = function (t) { return 24 + (w - 48) * (t - snap.start) / (snap.end - snap.start); };
     var Y = function (b) { if (b.chain) return c; var side = b.lane < 9 ? -1 : 1, k = b.lane < 9 ? 8 - b.lane : b.lane - 9; return c + side * (gap + (k + 0.5 + (b.jit || 0)) * bd); };
     var pos = new Map(); snap.list.forEach(function (b) { pos.set(b.h, { x: X(b.t), y: Y(b) }); });
+    var drawn = [];
     var line = css('--line'), teal = css('--green'), text = css('--text'), faint = css('--faint'), orange = css('--orange');
     g.clearRect(0, 0, w, h);
     g.font = (w < 560 ? '12px ' : '13px ') + css('--font'); g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillStyle = faint;
-    var tsA = new Date(snap.start).toLocaleTimeString('en-US'), tsB = new Date(snap.end).toLocaleTimeString('en-US');
+    var tsA = new Date(snap.start).toLocaleTimeString('en-GB'), tsB = new Date(snap.end).toLocaleTimeString('en-GB');
     g.fillText(w < 560 ? tsA + ' to ' + tsB + ', your time' : 'Ten real seconds, as mined: ' + tsA + ' to ' + tsB + ' your time', 24, 16);
     var seq = ordered ? ordered.list : [], N = seq.length;
     var A = Math.min(1, anim / 0.62), B = ease((anim - 0.66) / 0.34);
@@ -329,8 +331,20 @@
       g.fillStyle = r < 0 && ordered ? faint : (b.chain ? text : teal);
       if (ordered && !lit && r >= 0 && B === 0) g.globalAlpha = 0.35;
       g.fillRect(x - s / 2, y - s / 2, s, s); g.globalAlpha = 1;
+      drawn.push({ b: b, x: x, y: y });
       if (ordered && r === visited - 1 && B === 0) { g.strokeStyle = orange; g.lineWidth = 2; g.strokeRect(x - s / 2 - 4, y - s / 2 - 4, s + 8, s + 8); g.lineWidth = 1; }
     });
+    /* inspector: the picked block, its parents (orange) and the blocks that point at it (outlined) */
+    var at = new Map(); drawn.forEach(function (d) { at.set(d.b.h, d); });
+    if (sel && at.has(sel)) {
+      var me = at.get(sel);
+      g.lineWidth = 2; g.strokeStyle = orange;
+      me.b.p.forEach(function (ph) { var q = at.get(ph); if (q) { g.beginPath(); g.moveTo(me.x, me.y); g.lineTo(q.x, q.y); g.stroke(); g.strokeRect(q.x - s / 2 - 3, q.y - s / 2 - 3, s + 6, s + 6); } });
+      g.strokeStyle = text; g.lineWidth = 1.5;
+      drawn.forEach(function (d) { if (d.b.p.indexOf(sel) >= 0) { g.beginPath(); g.moveTo(me.x, me.y); g.lineTo(d.x, d.y); g.stroke(); } });
+      g.lineWidth = 2.5; g.strokeRect(me.x - s / 2 - 5, me.y - s / 2 - 5, s + 10, s + 10); g.lineWidth = 1;
+    }
+    hits = drawn.length && window.d3 ? { d: d3.Delaunay.from(drawn, function (d) { return d.x; }, function (d) { return d.y; }), pts: drawn, s: s } : null;
     if (ordered && B > 0.5) {
       g.fillStyle = faint; g.font = '11px ' + css('--mono'); g.textAlign = 'center'; g.textBaseline = 'top'; g.globalAlpha = (B - 0.5) * 2;
       seq.forEach(function (b, i) { if ((i + 1) % 10 === 0 || i === 0) { var q = T(i); g.fillText(String(i + 1), q.x, q.y + s / 2 + 4); } });
@@ -341,18 +355,41 @@
       g.fillText(fmt(visited) + ' / ' + fmt(N), w - 24, w < 560 ? 31 : 16);
     }
   }
-  var orderRun = 0;
+  /* Inspector: nearest block by Delaunay lookup (d3-delaunay, ISC), the pattern from Observable's "Delaunay.find" notebook. */
+  var sel = null, hits = null, inspect = $('orderInspect'), scrub = $('oScrub');
+  function pick(ev) {
+    if (!hits) return;
+    var r = oc.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
+    var i = hits.d.find(x, y), d = hits.pts[i];
+    if (!d || Math.hypot(d.x - x, d.y - y) > 28) { if (ev.type === 'click' && sel) { sel = null; drawOrder(); inspect.textContent = 'Point at a block, or tap one, to see which blocks it points at.'; } return; }
+    if (sel === d.b.h) return;
+    sel = d.b.h; drawOrder();
+    var b = d.b, inView = b.p.filter(function (ph) { return snap.list.some(function (o) { return o.h === ph; }); }).length;
+    var kids = snap.list.filter(function (o) { return o.p.indexOf(b.h) >= 0; }).length;
+    var place = ordered ? ordered.list.indexOf(b) : -1;
+    inspect.textContent = 'Block ' + b.h.slice(0, 8) + '…, mined ' + new Date(b.t).toLocaleTimeString('en-GB') + '. Points at ' + b.p.length + (b.p.length === 1 ? ' parent' : ' parents') +
+      (b.p.length ? ' (' + inView + ' in this window, orange)' : '') + '; ' + kids + (kids === 1 ? ' later block points' : ' later blocks point') + ' back at it.' +
+      (b.chain ? ' On the selected chain.' : '') + (place >= 0 ? ' Place in the agreed order: ' + (place + 1) + ' of ' + ordered.list.length + '.' : '');
+  }
+  oc.addEventListener('pointermove', function (e) { if (e.pointerType === 'mouse') pick(e); });
+  oc.addEventListener('click', pick);
+  if (scrub) scrub.addEventListener('input', function () {
+    if (!ordered) return; orderRun++; anim = +scrub.value / 1000; drawOrder();
+    if (anim >= 1 && orderCaption) orderCaption(); else $('orderOut').textContent = 'Scrubbing: ' + fmt(Math.floor(Math.min(1, anim / 0.62) * ordered.list.length)) + ' of ' + fmt(ordered.list.length) + ' blocks threaded.';
+  });
+  var orderRun = 0, orderCaption = null;
   function playOrder() {
     computeOrder();
     var o = ordered;
     $('orderOut').textContent = 'Threading ' + fmt(o.list.length) + ' real blocks in GHOSTDAG order…';
     var caption = function () { $('orderOut').innerHTML = '<b>' + fmt(snap.list.length) + ' real blocks</b>, mined in parallel in ten seconds, now in one line. ' +
       fmt(o.chains) + (o.chains === 1 ? ' is a chain block' : ' are chain blocks') + ' (white): each one merged the blocks it saw. Red: <b>' + o.reds + '</b>.' +
-      (o.waiting.length ? ' ' + o.waiting.length + ' newest still waiting for a chain block to merge them (gray).' : ''); };
-    if (reduced) { anim = 1; drawOrder(); caption(); return; }
+      (o.waiting.length ? ' ' + o.waiting.length + ' newest still waiting for a chain block to merge them (grey).' : ''); };
+    orderCaption = caption; if (scrub) scrub.disabled = false;
+    if (reduced) { anim = 1; if (scrub) scrub.value = 1000; drawOrder(); caption(); return; }
     var t0 = performance.now(), lastV = 0, run = ++orderRun;
     /* a newer click or a fresh snapshot ends this run, so it never reads a cleared order */
-    (function step(now) { if (run !== orderRun || ordered !== o) return; anim = Math.min(1, (now - t0) / 6000); var v = Math.floor(Math.min(1, anim / 0.62) * o.list.length); if (v > lastV) { tick(o.list[v - 1] && o.list[v - 1].chain); lastV = v; } drawOrder(); if (anim < 1) requestAnimationFrame(step); else caption(); })(t0);
+    (function step(now) { if (run !== orderRun || ordered !== o) return; anim = Math.min(1, (now - t0) / 6000); if (scrub) scrub.value = Math.round(anim * 1000); var v = Math.floor(Math.min(1, anim / 0.62) * o.list.length); if (v > lastV) { tick(o.list[v - 1] && o.list[v - 1].chain); lastV = v; } drawOrder(); if (anim < 1) requestAnimationFrame(step); else caption(); })(t0);
   }
   oGo.addEventListener('click', function () { takeSnap(); playOrder(); oGo.textContent = 'Line them up again'; });
   oAgain.addEventListener('click', function () { takeSnap(); $('orderOut').textContent = 'A fresh ten seconds from the network. Line them up.'; });
@@ -378,8 +415,8 @@
       var nK = ok ? Math.max(0, k - k0) : 0, nB = ok ? Math.max(0, b - b0) : 0;
       var mins = Math.floor(el / 60), secs = Math.floor(el % 60);
       var since = mins ? mins + ' min ' + secs + ' s' : secs + ' s';
-      $('tK').textContent = ok ? fmt(nK) : (L.sim ? '–' : '…');
-      $('tB').textContent = ok ? fmt(nB) : (L.sim ? '–' : '…');
+      KUI.num($('tK'), ok ? nK : null, null, ok ? fmt(nK) : (L.sim ? '–' : '…'));
+      KUI.num($('tB'), ok ? nB : null, null, ok ? fmt(nB) : (L.sim ? '–' : '…'));
       $('tKnote').textContent = 'blocks in ' + since;
       $('tBnote').textContent = 'blocks in ' + since;
       if (!ok) { $('tOut').textContent = (L.sim && k0 === null) ? 'The live networks could not be reached from your browser, so there is nothing to count.' : 'Counting since you opened the page (' + since + ').'; }

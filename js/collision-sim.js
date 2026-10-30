@@ -135,8 +135,12 @@
             'so far: ' + kept.toLocaleString() + ' kept, ' + discarded.toLocaleString() + ' thrown away';
           document.getElementById(prefix + 'dagStat').textContent =
             'so far: ' + total.toLocaleString() + ' kept, 0 thrown away';
-          document.getElementById(prefix + 'resultLine').innerHTML =
-            'A single chain throws away about <b>' + fmtPct(predictedDiscardPct) + '%</b> of its blocks at this rate.';
+          const line = document.getElementById(prefix + 'resultLine');
+          if (!line.firstChild) line.innerHTML = '<b class="pct num"></b><span class="pct-cap">of its blocks would a single chain throw away at this speed. Modelled.</span>';
+          const pctTxt = fmtPct(predictedDiscardPct);
+          const pctEl = line.firstChild;
+          if (window.KUI) KUI.num(pctEl, +pctTxt, { d: pctTxt.includes('.') ? pctTxt.split('.')[1].length : 0, suffix: '%' }, 'About ' + pctTxt + '%');
+          else pctEl.textContent = pctTxt + '%';
           if (graphSummary) {
             graphSummary.textContent = 'Graph summary: the single-chain view has ' + kept.toLocaleString() +
               ' kept and ' + discarded.toLocaleString() + ' thrown-away blocks in this run. The blockDAG view keeps all ' +

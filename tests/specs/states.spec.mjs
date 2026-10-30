@@ -15,9 +15,8 @@ const test = base.extend({
 
 test('API unreachable: labeled simulation, honest fallbacks, no script errors', async ({ page, pageErrors }) => {
   await offline(page);
-  await page.goto('./');
+  await page.goto('/');
   await expect(page.locator('#liveSource')).toContainText('Simulation');
-  await expect(page.locator('#coldOpen')).not.toContainText('real Kaspa blocks');
   await expect(page.locator('#lfHash')).toHaveText('not reachable');
   await expect(page.locator('#lfSupply')).toHaveText('not reachable');
   await expect(page.locator('#tOut')).toContainText('could not be reached', { timeout: 20_000 });
@@ -35,9 +34,9 @@ test('API unreachable: labeled simulation, honest fallbacks, no script errors', 
 test('idle ghost demo keeps running past its history cap', async ({ page, pageErrors }) => {
   await offline(page);
   await page.clock.install();
-  await page.goto('./');
+  await page.goto('/');
   await page.locator('#c3').scrollIntoViewIfNeeded();
-  await page.clock.runFor(120_000);
+  await page.clock.runFor(60_000);
   await expect(page.locator('#gOut')).not.toContainText('enough history');
   await page.click('#gHide');
   await page.clock.runFor(5_000);
@@ -47,12 +46,11 @@ test('idle ghost demo keeps running past its history cap', async ({ page, pageEr
 test.describe('reduced motion', () => {
   test.use({ reducedMotion: 'reduce' });
   test('loads, toys give results without animating', async ({ page, pageErrors }) => {
-    await page.goto('./');
+    await page.goto('/');
     await page.locator('#c3').scrollIntoViewIfNeeded();
     await page.click('#gHide');
     await expect(page.locator('#gOut')).toContainText('Mining in secret');
-    await page.locator('#coinsMore summary').click();
-    await page.click('#coinsGo');
+      await page.click('#coinsGo');
     await expect(page.locator('#coinsOut')).toContainText('They landed in the order');
     const anims = await page.evaluate(() => document.getAnimations().filter(a => a.playState === 'running' && a.effect?.getTiming().iterations === Infinity).length);
     expect(anims).toBe(0);

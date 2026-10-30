@@ -2,7 +2,7 @@
 import { test, expect, setRange } from './helpers.mjs';
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('./');
+  await page.goto('/');
   await page.locator('#liveSource').filter({ hasText: /Live|Simulation/ }).waitFor({ timeout: 20_000 });
 });
 
@@ -27,14 +27,13 @@ test('nerd mode opens every nerd expander and shows secondary controls; off clos
 });
 
 test('theme toggle flips and keeps the coins result', async ({ page, errors }) => {
-  await page.locator('#coinsMore summary').click();
   await page.click('#coinsGo');
   await expect(page.locator('#coinsOut')).toContainText('They landed in the order');
   const before = await page.locator('#coinsCanvas').screenshot();
   await page.click('#theme');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.click('#theme');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.click('#theme');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   const after = await page.locator('#coinsCanvas').screenshot();
   expect(after.equals(before), 'coins canvas reset by redraw').toBe(true);
 });

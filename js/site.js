@@ -1,4 +1,4 @@
-/* Kaspa Explained. Plain JS, no dependencies. */
+/* Kaspa Explained. Plain JS on top of vendored d3, Observable Plot, interact.js and NumberFlow (see CREDITS.md). */
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
@@ -19,7 +19,7 @@
     if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
     var g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); return { g: g, w: w, h: h };
   }
-  var fmt = function (n, d) { return n.toLocaleString('en-US', { maximumFractionDigits: d || 0, minimumFractionDigits: d || 0 }); };
+  var fmt = function (n, d) { return n.toLocaleString('en-GB', { maximumFractionDigits: d || 0, minimumFractionDigits: d || 0 }); };
 
   /* Theme and nerd mode */
   var themeBtn = $('theme');
@@ -27,7 +27,7 @@
   themeBtn.addEventListener('click', function () {
     var t = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
     document.documentElement.dataset.theme = t; store.set('ke-theme-v', t);
-    try { localStorage.setItem('ke-a-theme', t); } catch (e) {}
+    try { localStorage.setItem('ke-theme', t); } catch (e) {}
     paintTheme(); redrawAll();
   });
   paintTheme();
@@ -98,7 +98,7 @@
       $('lfHash').textContent = fmt(r[0].hashrate / 1000, 1) + ' PH/s';
       $('lfSupply').textContent = fmt(+r[1].circulatingSupply / 1e8 / 1e9, 3) + ' billion';
       liveReward = r[2].blockreward;
-      $('emitLive').textContent = 'Live now: ' + fmt(liveReward, 8) + ' KAS per block, about ' + fmt(liveReward * 10, 2) + ' KAS a second. Next step down: ' + fmt(r[3].nextHalvingAmount, 8) + ' KAS per block, around ' + new Date(r[3].nextHalvingTimestamp * 1000).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) + '. Source: api.kaspa.org.';
+      $('emitLive').textContent = 'Live now: ' + fmt(liveReward, 8) + ' KAS per block, about ' + fmt(liveReward * 10, 2) + ' KAS a second. Next step down: ' + fmt(r[3].nextHalvingAmount, 8) + ' KAS per block, around ' + new Date(r[3].nextHalvingTimestamp * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + '. Source: api.kaspa.org.';
     }).catch(function () { ['lfHash', 'lfSupply'].forEach(function (id) { $(id).textContent = 'not reachable'; }); });
   }
   facts();
@@ -203,7 +203,7 @@
     all.forEach(function (b) { (byLayer[b.layer] = byLayer[b.layer] || []).push(b); });
     Object.keys(byLayer).forEach(function (L) {
       var arr = byLayer[L]; arr.sort(function (a, b) { return (a.hidden ? 1 : 0) - (b.hidden ? 1 : 0) || a.id - b.id; });
-      arr.forEach(function (b, i) { b.x = 30 + (L - minL) * dx; b.y = h / 2 + (w > 700 ? 30 : 50) + (i - (arr.length - 1) / 2) * 50; });
+      arr.forEach(function (b, i) { b.x = 30 + (L - minL) * dx; b.y = h / 2 + (i - (arr.length - 1) / 2) * 50; });
     });
     g.clearRect(0, 0, w, h);
     var vis = function (b) { return b.layer >= minL - 1; };
@@ -228,22 +228,21 @@
       g.fillText(b.hidden ? '?' : String(b.id), b.x, b.y + 0.5);
       if (b.mine && !b.hidden) { g.strokeStyle = css('--orange'); g.lineWidth = 1.5; g.strokeRect(b.x - 15, b.y - 15, 30, 30); }
     });
-    /* scoreboard and verdict, drawn on the stage */
-    var honest = G.blocks.filter(function (b) { return !b.mine; }).length;
-    g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.font = '13px ' + css('--font'); g.fillStyle = css('--faint');
-    g.fillText('Honest network', 0, 18); g.fillText(G.secret.length ? 'You, in secret' : (G.released ? 'Your released blocks' : 'You'), 170, 18);
-    g.font = '500 30px ' + css('--mono'); g.fillStyle = css('--cyan'); g.fillText(fmt(honest), 0, 52);
-    g.fillStyle = css('--orange'); g.fillText(fmt(G.secret.length || (G.released ? G.released.length : 0)), 170, 52);
-    if (G.released && G.flashAt) {
-      var red = G.released.filter(function (b) { return !v.blue.has(b); }).length, el = performance.now() - G.flashAt;
+    /* scoreboard and verdict live in the DOM so they roll (NumberFlow) and reflow */
+    var honest = G.blocks.filter(function (b) { return !b.mine; }).length, youN = G.secret.length || (G.released ? G.released.length : 0);
+    KUI.num($('gHonest'), honest, null, fmt(honest)); KUI.num($('gYou'), youN, null, fmt(youN));
+    $('gYou').previousElementSibling.textContent = G.secret.length ? 'Your hidden blocks' : (G.released ? 'Your released blocks' : 'Your blocks');
+    var vd = $('gVerdict');
+    if (G.released) {
+      var red = G.released.filter(function (b) { return !v.blue.has(b); }).length, el = G.flashAt ? performance.now() - G.flashAt : 1e9;
       if (el < 700 && !reduced) {
         g.globalAlpha = 1 - el / 700; g.strokeStyle = css('--red'); g.lineWidth = 3;
         G.released.forEach(function (b) { if (vis(b)) { g.strokeRect(b.x - 18 - el / 30, b.y - 18 - el / 30, 36 + el / 15, 36 + el / 15); } });
         g.globalAlpha = 1; g.lineWidth = 1; requestAnimationFrame(drawGhost);
       }
-      var wideG = w > 700; g.textAlign = wideG ? 'right' : 'left'; g.font = '700 ' + (wideG ? 44 : 26) + 'px ' + css('--display'); g.fillStyle = red ? css('--red') : css('--muted');
-      g.fillText(red ? 'Outvoted: ' + red + ' of ' + G.released.length + ' red.' : 'Too short to be an attack.', wideG ? w : 0, wideG ? 52 : 92);
-    }
+      var vt = red ? 'Outvoted. ' + red + ' of ' + G.released.length + ' came out red.' : 'Too short to be an attack.';
+      if (vd.textContent !== vt) { vd.textContent = vt; vd.className = 'verdict' + (red ? ' bad' : ''); }
+    } else if (vd.textContent) { vd.textContent = ''; vd.className = 'verdict'; }
     var ord = v.order.slice(0, -1);
     $('gOrder').innerHTML = ord.slice(-28).map(function (b) { return v.blue.has(b) ? String(b.id) : '<span style="color:var(--red)">' + b.id + ' red</span>'; }).join(' → ');
   }
@@ -325,15 +324,21 @@
 
   /* Chapter 5: insiders at launch */
   var FAIR = [['XRP', 100], ['Ethereum', 16.7], ['Cardano', 11.52], ['Bitcoin', 0], ['Kaspa', 0]];
+  /* Waffle charts: Observable Plot's waffleY mark (ISC), one small chart per coin, 100 cells each. */
+  /* Plot labels its groups with aria-label; the chart is described once on its container instead. */
+  function quiet(svg) { svg.setAttribute('aria-hidden', 'true'); svg.querySelectorAll('[aria-label]').forEach(function (n) { n.removeAttribute('aria-label'); }); return svg; }
   function drawFair() {
-    var c = $('fairCanvas'), f = fit(c), g = f.g, w = f.w, h = f.h, lw = 80, rowH = h / FAIR.length;
-    g.clearRect(0, 0, w, h); g.font = '14px ' + css('--font'); g.textBaseline = 'middle';
-    FAIR.forEach(function (r, i) {
-      var y = i * rowH + rowH / 2, bw = (w - lw - 60) * r[1] / 100;
-      g.fillStyle = css('--muted'); g.textAlign = 'left'; g.fillText(r[0], 0, y);
-      g.fillStyle = r[0] === 'Kaspa' ? css('--green') : css('--faint'); g.globalAlpha = r[0] === 'Kaspa' ? 1 : 0.55;
-      g.fillRect(lw, y - 9, Math.max(2, bw), 18); g.globalAlpha = 1;
-      g.fillStyle = css('--text'); g.fillText(r[1] === 0 ? '0%' : (r[1] % 1 ? r[1].toFixed(1) : r[1]) + '%', lw + Math.max(2, bw) + 8, y);
+    var box = $('fairPlot'); if (!window.Plot) return;
+    var ins = css('--orange'), rest = css('--line-bright');
+    box.textContent = '';
+    FAIR.forEach(function (r) {
+      var cell = document.createElement('div'); cell.className = 'waffle';
+      var data = [{ c: 'x', who: 'insiders', v: r[1] }, { c: 'x', who: 'everyone else', v: 100 - r[1] }];
+      cell.appendChild(quiet(Plot.plot({ width: 120, height: 120, margin: 0, x: { axis: null, padding: 0 }, y: { axis: null, domain: [0, 100] },
+        color: { domain: ['insiders', 'everyone else'], range: [ins, rest] }, style: { background: 'transparent' },
+        marks: [Plot.waffleY(data, { x: 'c', y: 'v', fill: 'who', unit: 1, multiple: 10, gap: 2 })] })));
+      var cap = document.createElement('p'); cap.innerHTML = '<b>' + r[0] + '</b><span class="num">' + (r[1] % 1 ? r[1].toFixed(1) : r[1]) + ' of 100</span>';
+      cell.appendChild(cap); box.appendChild(cell);
     });
   }
 
@@ -349,20 +354,30 @@
     }
     return s;
   }
+  function monthOf(y) { return new Date(Date.UTC(Math.floor(y), Math.floor((y % 1) * 12 + 1e-6), 1)).toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' }); }
   function drawEmit() {
     var y = +$('yIn').value; setParam('y', y.toFixed(2));
-    var month = new Date(Date.UTC(Math.floor(y), Math.floor((y % 1) * 12 + 1e-6), 1)).toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+    var month = monthOf(y);
     $('yVal').textContent = month;
-    var c = $('emitCanvas'), f = fit(c), g = f.g, w = f.w, h = f.h, pad = 30;
-    g.clearRect(0, 0, w, h);
-    var X = function (yy) { return pad + (w - pad - 8) * (yy - 2026) / 14; }, Y = function (r) { return 10 + (h - 34) * (1 - r / 22); };
-    g.strokeStyle = css('--line'); g.beginPath(); g.moveTo(pad, 10); g.lineTo(pad, h - 24); g.lineTo(w - 6, h - 24); g.stroke();
-    g.fillStyle = css('--faint'); g.font = '12px ' + css('--font'); g.textAlign = 'center';
-    [2026, 2030, 2034, 2038].forEach(function (yy) { g.fillText(yy, X(yy), h - 8); });
-    g.strokeStyle = css('--green'); g.lineWidth = 2; g.beginPath();
-    for (var yy = 2026.76; yy <= 2040; yy += 1 / 48) { var px = X(yy), py = Y(rate(yy)); if (yy === 2026.76) g.moveTo(px, py); else g.lineTo(px, py); }
-    g.stroke();
-    g.fillStyle = css('--text'); g.beginPath(); g.arc(X(y), Y(rate(y)), 5, 0, 7); g.fill();
+    var box = $('emitPlot');
+    if (window.Plot) {
+      var wv = box.clientWidth || 600, data = [];
+      for (var yy = 2026.76; yy <= 2040.001; yy += 1 / 48) data.push({ y: yy, r: rate(yy) });
+      var fg = css('--muted'), green = css('--green');
+      var plot = Plot.plot({ width: wv, height: wv < 560 ? 220 : 260, marginLeft: 44, marginBottom: 30, style: { background: 'transparent', color: fg, fontFamily: css('--mono'), fontSize: '11px' },
+        x: { domain: [2026.7, 2040], ticks: wv < 560 ? [2027, 2031, 2035, 2039] : [2027, 2029, 2031, 2033, 2035, 2037, 2039], tickFormat: function (d) { return String(d); }, label: null },
+        y: { domain: [0, 22], grid: true, label: 'KAS a second', ticks: [0, 5, 10, 15, 20] },
+        marks: [
+          Plot.areaY(data, { x: 'y', y: 'r', curve: 'step-after', fill: green, fillOpacity: 0.12 }),
+          Plot.lineY(data, { x: 'y', y: 'r', curve: 'step-after', stroke: green, strokeWidth: 2 }),
+          Plot.ruleX([y], { stroke: css('--text'), strokeOpacity: 0.5 }),
+          Plot.dot([{ y: y, r: rate(y) }], { x: 'y', y: 'r', r: 5, fill: css('--text') }),
+          Plot.text([{ y: y, r: rate(y) }], { x: 'y', y: 'r', text: function (d) { return fmt(d.r, 2) + ' KAS/s'; }, dy: -14, textAnchor: y > 2036 ? 'end' : 'start', dx: y > 2036 ? -8 : 8, fill: css('--text'), fontSize: 13 }),
+          Plot.tip(data, Plot.pointerX({ x: 'y', y: 'r', title: function (d) { return monthOf(d.y) + ': ' + fmt(d.r, 2) + ' KAS a second'; } }))
+        ] });
+      plot.addEventListener('click', function () { if (plot.value) { $('yIn').value = Math.max(+$('yIn').min, Math.min(2040, plot.value.y)).toFixed(4); drawEmit(); } });
+      box.replaceChildren(quiet(plot));
+    }
     var s = supplyAt(y);
     $('emitOut').innerHTML = month + ': about <b>' + fmt(rate(y), 2) + ' KAS a second</b> to miners, and about <b>' + fmt(s / 1e9, 2) + ' billion</b> KAS in total. Dates are approximate; steps follow block count, not the calendar.';
   }
@@ -375,13 +390,20 @@
     $('tpsVal').textContent = fmt(tps); $('feeVal').textContent = fee.toFixed(3);
     setParam('tps', tps); setParam('fee', fee);
     var sub = R_NOW * 86400, fees = tps * fee * 86400, share = fees / (sub + fees);
-    var c = $('minersCanvas'), f = fit(c), g = f.g, w = f.w, h = f.h;
-    g.clearRect(0, 0, w, h);
-    g.fillStyle = css('--green'); g.fillRect(0, 20, w * (1 - share), 30);
-    g.fillStyle = css('--orange'); g.fillRect(w * (1 - share), 20, w * share, 30);
-    g.font = '13px ' + css('--font'); g.textBaseline = 'top'; g.fillStyle = css('--muted');
-    g.textAlign = 'left'; g.fillText('new coins', 0, 58); g.textAlign = 'right'; g.fillText('fees', w, 58);
+    var box = $('minersPlot');
+    if (window.Plot) {
+      var wv = box.clientWidth || 600, rows = [{ k: 'New coins', v: sub }, { k: 'Fees', v: fees }];
+      box.replaceChildren(quiet(Plot.plot({ width: wv, height: 92, marginLeft: 0, marginRight: 0, marginTop: 6, marginBottom: 28,
+        style: { background: 'transparent', color: css('--muted'), fontFamily: css('--mono'), fontSize: '11px' },
+        x: { percent: true, domain: [0, 100], ticks: [0, 25, 50, 75, 100], tickFormat: function (d) { return d + '%'; }, label: null },
+        color: { domain: ['New coins', 'Fees'], range: [css('--green'), css('--orange')] },
+        marks: [
+          Plot.barX(rows, Plot.stackX({ x: 'v', fill: 'k', offset: 'normalize', insetRight: 1 })),
+          Plot.text(rows, Plot.stackX({ x: 'v', offset: 'normalize', text: function (d) { var p = d.v / (sub + fees); return p > 0.18 ? d.k + ' ' + fmt(p * 100, 1) + '%' : ''; }, fill: css('--bg'), fontSize: 13, fontWeight: 600 }))
+        ] })));
+    }
     $('minersOut').innerHTML = 'Per day: <b>' + fmt(sub) + ' KAS</b> in new coins, <b>' + fmt(fees) + ' KAS</b> in fees. Fees are <b>' + fmt(share * 100, 1) + '%</b> of what miners earn. These are your guesses, not measurements.';
+    $('minersGap').textContent = fee > 0 ? 'Arithmetic, not a forecast: at this fee, fees alone would match today’s new coins at about ' + fmt(R_NOW / fee) + ' transactions a second, every second.' : 'At a zero fee, no number of transactions replaces the new coins.';
   }
   ['tps', 'fee'].forEach(function (k) { var v = params.get(k); if (v !== null) $(k + 'In').value = v; $(k + 'In').addEventListener('input', drawMiners); });
 
@@ -391,11 +413,18 @@
     if (!/^[0-9a-f]{64}$/.test(id)) { out.textContent = 'That doesn’t look like a transaction id. It should be 64 characters, 0-9 and a-f.'; return; }
     out.textContent = 'Asking the network…';
     getJSON(API + '/transactions/' + id + '?resolve_previous_outpoints=no').then(function (tx) {
-      var when = tx.block_time ? new Date(tx.block_time).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'medium' }) + ' your time' : 'unknown time';
+      var when = tx.block_time ? new Date(tx.block_time).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'medium' }) + ' your time' : 'unknown time';
       var total = (tx.outputs || []).reduce(function (a, o) { return a + (+o.amount || 0); }, 0) / 1e8;
       out.innerHTML = (tx.is_accepted ? 'Accepted' : 'In a block, not yet accepted (give it a few seconds)') + ' · first in a block at ' + when +
-        ' · outputs total ' + fmt(total, 4) + ' KAS · <a href="https://kas.fyi/transaction/' + id + '">open in explorer</a>';
+        ' · outputs total ' + fmt(total, 4) + ' KAS · <a href="' + API + '/transactions/' + id + '">raw record on api.kaspa.org</a>';
     }).catch(function () { out.textContent = 'Not found, or the API could not be reached. New transactions can take a few seconds to show up.'; });
+  });
+
+  $('txRecent').addEventListener('click', function () {
+    var K = window.KLive, best = null;
+    if (K && K.ok && !K.sim) K.blocks.forEach(function (b) { if (b.tid && b.chain && b.t < K.newest - 20000 && (!best || b.t > best.t)) best = b; });
+    if (!best) { $('txOut').textContent = 'Nothing real to hand yet: the live feed isn’t connected, or no block has settled long enough. Paste an id instead.'; return; }
+    $('txIn').value = best.tid; $('txGo').click();
   });
 
   /* Chapter 4: the duel. Kaspa side counts real blocks; Bitcoin side waits for real Bitcoin blocks. */
@@ -404,6 +433,40 @@
     getJSON('https://mempool.space/api/v1/blocks').then(function (r) { btcTip = { h: r[0].height, t: r[0].timestamp * 1000 }; }).catch(function () {});
   }
   btcPoll(); setInterval(btcPoll, 30000);
+  /* One log-scale ruler for both clocks: d3 scaleLog + axis (ISC). 0.1 s to 2 h. */
+  var TR = null;
+  function buildTrack() {
+    var fig = $('track'); if (!window.d3 || !fig) return;
+    var w = fig.clientWidth, narrow = w < 560, h = narrow ? 132 : 120;
+    var svg = d3.select('#trackSvg').attr('viewBox', '0 0 ' + w + ' ' + h).attr('width', w).attr('height', h);
+    svg.selectAll('*').remove();
+    var x = d3.scaleLog().domain([0.1, 7200]).range([14, w - 14]), axisY = h - 26;
+    var kY = narrow ? 40 : 38, bY = narrow ? 76 : 70;
+    svg.append('rect').attr('x', x(1)).attr('width', x(3) - x(1)).attr('y', 6).attr('height', axisY - 6).attr('fill', 'var(--green)').attr('opacity', 0.18);
+    svg.append('line').attr('x1', x(3600)).attr('x2', x(3600)).attr('y1', 6).attr('y2', axisY).attr('stroke', 'var(--orange)').attr('stroke-dasharray', '3 3');
+    svg.append('text').attr('x', x(3) + 6).attr('y', 18).attr('class', 'tl').text(narrow ? 'Kaspa: 1 to 3 s' : 'Kaspa settles: 1 to 3 s');
+    svg.append('text').attr('x', x(3600) - 6).attr('y', narrow ? 34 : 18).attr('text-anchor', 'end').attr('class', 'tl').text(narrow ? 'Bitcoin: ~1 h' : 'Bitcoin, six blocks: about 1 h');
+    var ax = svg.append('g').attr('transform', 'translate(0,' + axisY + ')').attr('class', 'tax')
+      .call(d3.axisBottom(x).tickValues([0.1, 1, 10, 60, 600, 3600]).tickFormat(function (v) { return { 0.1: '0.1 s', 1: '1 s', 10: '10 s', 60: '1 min', 600: '10 min', 3600: '1 h' }[v]; }).tickSizeOuter(0));
+    ax.select('.domain').attr('stroke', 'var(--line-bright)'); ax.selectAll('line').attr('stroke', 'var(--line-bright)');
+    var mk = function (y, col, name) {
+      var g = svg.append('g').attr('class', 'tmark').attr('opacity', 0);
+      g.append('line').attr('y1', y).attr('y2', axisY).attr('stroke', col).attr('stroke-width', 1.5);
+      g.append('circle').attr('cy', y).attr('r', 6).attr('fill', col);
+      g.append('text').attr('y', y - 10).attr('class', 'tl strong').text(name);
+      return g;
+    };
+    TR = { x: x, w: w, k: mk(kY, 'var(--green)', 'Kaspa'), b: mk(bY, 'var(--orange)', 'Bitcoin') };
+    if (TR.last) moveTrack.apply(null, TR.last);
+  }
+  function moveTrack(ks, bs) {
+    if (!TR) return; TR.last = [ks, bs];
+    [[TR.k, ks], [TR.b, bs]].forEach(function (p) {
+      var xv = TR.x(Math.max(0.1, Math.min(7200, p[1]))), g = p[0];
+      g.attr('opacity', 1).attr('transform', 'translate(' + xv + ',0)');
+      g.select('text').attr('text-anchor', xv > TR.w - 70 ? 'end' : xv < 70 ? 'start' : 'middle');
+    });
+  }
   function mmss(ms) { var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
   $('dGo').addEventListener('click', function () {
     duel = { id: (duel ? duel.id : 0) + 1, t0: performance.now(), wall: Date.now(), fast: false, btcH0: btcTip ? btcTip.h : null };
@@ -427,6 +490,7 @@
       var since = btcTip ? mmss(Date.now() - btcTip.t) : null;
       $('dBout').innerHTML = conf >= 6 ? '<b>Settled.</b> Six confirmations.' : (d.fast ? conf + ' of 6 confirmations. Simulated at the average pace, one block per ten minutes.' :
         'Waiting for the next real Bitcoin block' + (since ? ': the last one, #' + fmt(btcTip.h) + ', was ' + since + ' ago.' : '.') + ' Then five more.');
+      moveTrack(Math.min(t, KS) / 1000, Math.min(bt, 3600000 * 2) / 1000);
       if (conf < 6) requestAnimationFrame(step);
     })(duel.t0);
   });
@@ -439,9 +503,38 @@
     cold: 'Accepted. That is exactly what the rule allows. The owner is now very safe, and you have achieved nothing.',
     wait: 'Accepted, once the date has passed. That is the other path the owner wrote. Real vaults pair this with a long delay so the owner can react first.'
   };
+  /* The coin is dragged with interact.js (MIT) onto drop zones; the zones are also plain buttons. */
+  var RULES = { steal: ['fail', ''], split: ['fail', ''], cold: ['pass', ''], wait: ['', 'pass'] };
+  var coin = $('vCoin'), cx = 0, cy = 0, dropped = false;
+  function place(x, y, animate) {
+    var from = coin.style.transform || 'translate(0px,0px)', to = 'translate(' + x + 'px,' + y + 'px)';
+    cx = x; cy = y; coin.style.transform = to;
+    if (animate && !reduced && coin.animate) coin.animate([{ transform: from }, { transform: to }], { duration: 320, easing: 'cubic-bezier(.2,.8,.2,1)' });
+  }
+  function judge(move, zone) {
+    $('vaultOut').textContent = VAULT[move];
+    var r = RULES[move];
+    $('ruleCold').className = r[0]; $('ruleDate').className = r[1];
+    document.querySelectorAll('.zone').forEach(function (z) { z.classList.toggle('picked', z === zone); z.classList.toggle('no', z === zone && r[0] === 'fail'); });
+    var home = coin.parentElement.getBoundingClientRect(), zr = zone.getBoundingClientRect(), c0 = coin.getBoundingClientRect();
+    var bx = c0.left - cx, by = c0.top - cy;
+    place(zr.left + zr.width / 2 - c0.width / 2 - bx, zr.top + zr.height / 2 - c0.height / 2 - by, true);
+    if (r[0] === 'fail') setTimeout(function () { place(0, 0, true); }, reduced ? 0 : 700);
+  }
   document.querySelectorAll('[data-try]').forEach(function (b) {
-    b.addEventListener('click', function () { $('vaultOut').textContent = VAULT[b.dataset.try]; });
+    b.addEventListener('click', function () { judge(b.dataset.try, b); });
   });
+  if (window.interact) {
+    interact(coin).draggable({ listeners: {
+      start: function () { dropped = false; coin.classList.add('drag'); },
+      move: function (e) { place(cx + e.dx, cy + e.dy, false); },
+      end: function () { coin.classList.remove('drag'); setTimeout(function () { if (!dropped) place(0, 0, true); }, 0); }
+    } });
+    interact('.zone').dropzone({ accept: '#vCoin', overlap: 'pointer',
+      ondragenter: function (e) { e.target.classList.add('over'); },
+      ondragleave: function (e) { e.target.classList.remove('over'); },
+      ondrop: function (e) { dropped = true; e.target.classList.remove('over'); judge(e.target.dataset.try, e.target); } });
+  }
 
   /* Finish: copy the two sentences */
   $('copy').addEventListener('click', function () {
@@ -452,7 +545,26 @@
   });
   var saved = store.get('ke-two', null); if (saved) $('mine').value = saved;
 
-  function redrawAll() { drawGhost(); drawCoins(coinsState.t, coinsState.order); drawRace(); drawFair(); drawEmit(); drawMiners(); }
+  /* Moose shelf: first-page covers, added by script so the guest section's HTML stays exactly as supplied. */
+  (function () {
+    var acts = document.querySelectorAll('#moose .actions');
+    function covers(before, list) {
+      if (!before) return;
+      var ul = document.createElement('ul'); ul.className = 'covers';
+      list.forEach(function (c) {
+        var li = document.createElement('li'), a = document.createElement('a'), img = document.createElement('img');
+        a.href = c[0]; img.src = c[1]; img.alt = 'First page of ' + c[2]; img.width = 132; img.height = 176; img.loading = 'lazy'; img.decoding = 'async';
+        a.appendChild(img); a.appendChild(document.createTextNode(c[3])); li.appendChild(a); ul.appendChild(li);
+      });
+      before.parentNode.insertBefore(ul, before);
+    }
+    covers(acts[1], [['files/satoshis-engine.pdf', 'img/cover-satoshis-engine.jpg', 'Satoshi’s Engine, English edition', 'English, 89 pages'],
+      ['files/satoshis-motor-svenska.pdf', 'img/cover-satoshis-motor-svenska.jpg', 'the Swedish edition', 'Svenska, 88 pages'],
+      ['files/satoshis-engine-companion.pdf', 'img/cover-satoshis-engine-companion.jpg', 'The Loops Inside the Engine', 'Companion, 6 pages']]);
+    covers(acts[2], [['files/the-instrument.pdf', 'img/cover-the-instrument.jpg', 'The Instrument', '279 pages']]);
+  })();
+
+  function redrawAll() { drawGhost(); drawCoins(coinsState.t, coinsState.order); drawRace(); drawFair(); drawEmit(); drawMiners(); buildTrack(); }
   document.querySelectorAll('details').forEach(function (d) { d.addEventListener('toggle', function () { if (d.open) redrawAll(); }); });
   redrawAll();
   var rt; addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(redrawAll, 120); });

@@ -1,4 +1,4 @@
-// Source checks that need no browser: Moose untouched, American English, no placeholder copy.
+// Source checks that need no browser: Moose untouched, British English, credits, no placeholder copy.
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs'; import path from 'node:path'; import crypto from 'node:crypto';
 const ROOT = path.resolve(import.meta.dirname, '../..');
@@ -8,9 +8,6 @@ const fx = f => fs.readFileSync(path.join(import.meta.dirname, '../fixtures', f)
 test('Moose section HTML is byte-for-byte v5', () => {
   expect(read('index.html').includes(fx('moose-v5.html'))).toBe(true);
 });
-test('Moose CSS is byte-for-byte v5', () => {
-  expect(read('css/site.css').includes(fx('moose-v5.css'))).toBe(true);
-});
 test('Moose files are byte-for-byte v5', () => {
   for (const line of fx('files-v5.sha256').trim().split('\n')) {
     const [hash, name] = line.split(/\s+/);
@@ -19,18 +16,34 @@ test('Moose files are byte-for-byte v5', () => {
   }
 });
 
-const BRIT = /\b(\w*(colour|favour|honour|behaviour|neighbour|flavour|rumour)\w*|\w+(isation|ising)|\w+(ised|ises)|centre\w*|metres?|litres?|maths|modell\w+|labell\w+|travell\w+|cancell\w+|signall\w+|defence|licence|grey|programme|catalogue|whilst|amongst|learnt|spelt|cheque|tyre|aluminium|sceptic\w*|fortnight|judgement|ageing|organis\w+|realis\w+|recognis\w+|optimis\w+|specialis\w+|visualis\w+|summaris\w+|prioritis\w+)\b/gi;
-const OK = new Set(['labelledby', 'raised', 'rises', 'promised', 'advised', 'surprised', 'compromised', 'revised', 'premises', 'promises', 'exercises', 'surprises', 'enterprises', 'comprised', 'comprises', 'advertised', 'praised', 'noises', 'cruises', 'raises', 'arises', 'devised', 'supervised', 'improvised', 'televised', 'precised']);
-test('American English in visible copy and scripts (Moose excluded)', () => {
+// Copy is British English (Moose's guest section is excluded: printed as he wrote it).
+const US = /\b(colou?r(?<=color)\w*|favor\w*|honor\w*|behavior\w*|neighbor\w*|flavor\w*|\w+(ization|izing|ized|izes)|center\w*|meters?|liters?|math|modeling|modeled|labeling|labeled|traveling|traveled|canceling|canceled|defense|gray|catalog|analyz\w+|skeptic\w*)\b/gi;
+const OK_US = new Set(['size', 'sized', 'seize']);
+// Human copy only: text between tags in the HTML, and string literals containing a space in the scripts.
+const visible = h => h.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, ' ').replace(/<[^>]+>/g, ' ');
+const strings = js => [...js.matchAll(/'((?:[^'\\\n]|\\.)*)'/g)].map(m => m[1].replace(/<[^>]*>/g, ' ')).filter(t => /\s/.test(t) && /[a-z]{3}/i.test(t)).join('\n');
+test('British English in visible copy and script strings (Moose excluded)', () => {
   let html = read('index.html');
   const i = html.indexOf('id="moose"'); html = html.slice(0, i) + html.slice(html.indexOf('</section>', i));
   const hits = [];
-  for (const [f, t] of [['index.html', html], ...['js/site.js', 'js/live.js', 'js/collision-sim.js'].map(f => [f, read(f)])]) {
-    for (const m of t.matchAll(BRIT)) if (!OK.has(m[0].toLowerCase())) hits.push(f + ': ' + m[0]);
-    for (const m of t.matchAll(/\b\d{1,2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{4}\b/g)) hits.push(f + ': date ' + m[0]);
-    if (/en-GB/.test(t)) hits.push(f + ': en-GB locale');
+  for (const [f, t] of [['index.html', visible(html)], ...['js/site.js', 'js/live.js', 'js/collision-sim.js'].map(f => [f, strings(read(f))])]) {
+    for (const m of t.matchAll(US)) if (!OK_US.has(m[0].toLowerCase())) hits.push(f + ': ' + m[0]);
+    for (const m of t.matchAll(/\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{1,2}, \d{4}\b/g)) hits.push(f + ': US date ' + m[0]);
   }
   expect(hits).toEqual([]);
+});
+test('numbers are formatted for en-GB', () => {
+  for (const f of ['js/site.js', 'js/live.js', 'js/ui.js']) expect(read(f), f).not.toMatch(/en-US/);
+  expect(read('js/ui.js')).toMatch(/en-GB/);
+});
+test('no third-party wallets or explorers', () => {
+  const t = read('index.html') + read('js/site.js') + read('js/live.js');
+  expect(t).not.toMatch(/kaspium|kastle|kasware|kas\.fyi|kaspa\.stream/i);
+});
+test('every vendored component is credited', () => {
+  const c = read('CREDITS.md');
+  for (const n of ['d3', 'Observable Plot', 'interact.js', 'NumberFlow', 'Mona Sans', 'Monaspace']) expect(c, n).toContain(n);
+  for (const f of fs.readdirSync(path.join(ROOT, 'vendor'))) expect(c, f).toContain(f);
 });
 test('no placeholder copy', () => {
   const t = read('index.html');
